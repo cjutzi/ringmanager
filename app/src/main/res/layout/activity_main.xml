@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/ScrollView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none" >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context=".MainActivity">
+
+        <LinearLayout
+            android:id="@+id/LinearLayout02"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/getLocations"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:gravity="left|center_vertical"
+                android:text="Get Location(s) -n- Delete(s)" />
+
+
+            <Button
+                android:id="@+id/addcurloc_full"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/getLocations"
+                android:layout_alignParentLeft="true"
+                android:gravity="left|center_vertical"
+                android:text="Add Current Location - Full Ring" />
+
+            <Button
+                android:id="@+id/addcurloc_vibrate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/addcurloc_vib"
+                android:gravity="left|center_vertical"
+                android:text="Add Current Location - Vibrate" />
+            <Button
+                android:id="@+id/stopService"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/addcurloc_vib"
+                android:gravity="left|center_vertical"
+                android:text="Stop Service" />
+
+            <Button
+                android:id="@+id/show_cur_map"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/addcurloc_vib"
+                android:gravity="left|center_vertical"
+                android:text="Show Current Lat/Lng on Map" />
+
+        </LinearLayout>
+
+        <CheckBox
+            android:id="@+id/sleep_until_prox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/LinearLayout02"
+            android:layout_marginTop="0dp"
+            android:text="Sleep until Proximiy Wakes \n(no status when not in proximity saves battery)" />
+
+        <CheckBox
+            android:id="@+id/track_idle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/sleep_until_prox"
+            android:layout_marginTop="0dp"
+            android:text="track idle period between locations" />
+
+        <CheckBox
+            android:id="@+id/track_proxy_trigger"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/track_idle"
+            android:layout_marginTop="0dp"
+            android:text="track proximity trigger" />
+
+        <CheckBox
+            android:id="@+id/track_locations"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/track_proxy_trigger"
+            android:layout_marginTop="0dp"
+            android:text="track when you are at defined location" />
+
+        <Button
+            android:id="@+id/tracks_clear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/track_locations"
+            android:gravity="left|center_vertical"
+            android:text="Clear Tracks" />
+
+        <Button
+            android:id="@+id/getHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/tracks_clear"
+            android:gravity="left|center_vertical"
+            android:text="Get Tracks History" />
+
+        <!--
+        <CheckBox
+            android:id="@+id/checkboxNum2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/checkboxNum1"
+            android:text="CheckBox 2" />
+
+        <CheckBox
+            android:id="@+id/checkboxNum3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/checkboxNum2"
+            android:text="CheckBox 3" />
+        -->
+        <!-- CheckBox Enable PubSub -->
+
+
+        <TextView
+            android:id="@+id/text_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_weight="0.35"
+            android:autoLink="web"
+            android:ems="10"
+            android:inputType="textNoSuggestions|textMultiLine" />
+
+
+    </RelativeLayout>
+
+</ScrollView>

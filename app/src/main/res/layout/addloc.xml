@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <EditText android:id="@+id/locName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Name of Location" />
+
+    <CheckBox android:id="@+id/active"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="active">
+        android:onClick="onCheckboxClicked"
+    </CheckBox>
+    <CheckBox android:id="@+id/vibrate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="vibrate">
+        android:onClick="onCheckboxClicked"
+    </CheckBox>
+    <CheckBox android:id="@+id/full_ring"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="full ring">
+        android:onClick="onCheckboxClicked"
+    </CheckBox>
+
+    <EditText
+        android:id="@+id/boundary"
+        android:layout_width="wrap_content"
+        android:layout_height="60dp"
+        android:gravity="left"
+        android:hint="trigger within meters" />
+    <Button android:id="@+id/addloc_ok"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_alignParentLeft="true"
+        android:text="OK" />
+    <Button android:id="@+id/addloc_cancel"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_alignParentLeft="true"
+        android:text="CANCEL" />
+    <EditText android:id="@+id/gps"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="top"
+        android:hint="GPS LOC - leave blank will use current GPS location" />
+    <RadioButton android:id="@+id/check_current_loc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="check on map current loc"/>
+</LinearLayout>

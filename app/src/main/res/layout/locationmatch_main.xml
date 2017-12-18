@@ -1,0 +1,60 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/locLatlng"
+        android:layout_width="280dp"
+        android:layout_height="20dp"
+        android:gravity="center"
+        android:hint="current lat lng" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="2dp"
+        android:background="#c0c0c0"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Check box shows active or inactive locations. Long Press to delete location"/>
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="2dp"
+        android:background="#c0c0c0"/>
+
+    <!--<TextView-->
+        <!--android:id="@+id/tvname"-->
+        <!--android:layout_width="175px"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:gravity="center"-->
+        <!--android:text="Name"/>-->
+
+    <!--<TextView-->
+        <!--android:id="@+id/tvtype"-->
+        <!--android:layout_width="75px"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:gravity="center"-->
+        <!--android:text="Ring Type" />-->
+    <!--<TextView-->
+        <!--android:id="@+id/tvdist"-->
+        <!--android:layout_width="75px"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:gravity="center"-->
+        <!--android:text="Distance(m)"/>-->
+
+    <!--<View-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="2dp"-->
+        <!--android:background="#c0c0c0"/>-->
+
+    <ListView
+        android:id="@+id/listView1"
+        android:gravity="left|center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </ListView>
+</LinearLayout>
