@@ -25,6 +25,10 @@ import java.util.TreeMap;
 public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 {
 
+    public final int  ACCURACY_LIMIT_METERS     = 30;
+    public final int  MAX_ACCURACY_FAILURE_TRYS = 15;
+    public final int  MAX_FIX_WAIT_SECONDS      = 10;
+
     public enum LocationReceiver_CONFIGURATION
     {
         SLEEP_UNTIL_PROX,
@@ -279,7 +283,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                     failing GPS Fix..
                  */
                 long msecFixWait = System.currentTimeMillis() - m_msecSinceStartFix;
-                if (msecFixWait > 10*1000)
+                if (msecFixWait > MAX_FIX_WAIT_SECONDS*1000)
                 {
                     Log.i(DEBUG_TAG, "GPS status change: ****** ABORTING GPS FIX.. MOVING TO NETWORK PROVIDER -- waited "+msecFixWait+" msec");
                     m_abortedGPSFixes++;
@@ -344,7 +348,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 
         /*
            if the provider is Network.. flush it.
-           if not.. accuracy < 30 meters is great.. try 15 times.. if not .. fuck it.
+           if not.. accuracy < 30 meters is great.. try MAX_ACCURACY_FAILURE_TRYS times.. if not .. fuck it.
            typically it's a 5-10 try with the GPS before you have the accuracy..
            'if you don't succeed, try (*20) again..
          */
@@ -353,8 +357,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
             m_accuracyTry++;
 
             if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER) ||
-                (location.getAccuracy() < 30) ||
-                (m_accuracyTry > 15))
+                (location.getAccuracy() < ACCURACY_LIMIT_METERS ) ||
+                (m_accuracyTry > MAX_ACCURACY_FAILURE_TRYS))
             {
                 m_locationManager.removeUpdates(this);
                 Log.i(DEBUG_TAG, "onLocationChange : provider = " + location.getProvider() + "  Accuracy = " + location.getAccuracy() + " try # " + m_accuracyTry);

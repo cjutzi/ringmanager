@@ -113,6 +113,7 @@ public class LocationMatch
             double dist = distance(lat, lng, latLng.lat, latLng.lng, 'm');
 
             latLng.lastDistMeter = (int) dist;
+            latLng.lastAccuracy = accuracy;
             m_locationList.put(latLng.name, latLng); // ??
 
             Log.i(DEBUG_TAG, "calcListDistance() : Distance from (" + key + ") is (" + dist + ") in meters");
