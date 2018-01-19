@@ -2,6 +2,7 @@ package com.example.cjutzi.myservice;
 
 import android.util.Log;
 
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -48,10 +49,15 @@ public class SaveRestore
             }
             catch (FileNotFoundException e)
             {
+                Log.e(DEBUG_TAG,"restoreStuff() : File not Ffound - "+externalFileDir+fileName);
+            }
+            catch ( EOFException e)
+            {
+                Log.e(DEBUG_TAG,"restoreStuff() : EOF Exception");
             }
             catch (IOException e)
             {
-                Log.e(DEBUG_TAG,e.getMessage());
+                 Log.e(DEBUG_TAG,e.getMessage());
             }
             catch (ClassNotFoundException e)
             {
@@ -88,8 +94,11 @@ public class SaveRestore
             }
             catch (FileNotFoundException e)
             {
-                Log.e(DEBUG_TAG,e.getMessage());
-
+                Log.e(DEBUG_TAG,"restoreStuff() : File not Found - "+externalFileDir+fileName);
+            }
+            catch ( EOFException e)
+            {
+                Log.e(DEBUG_TAG,"restoreStuff() : EOF Exception");
             }
             catch (IOException e)
             {

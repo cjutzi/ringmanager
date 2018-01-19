@@ -25,10 +25,6 @@ import java.util.TreeMap;
 public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 {
 
-    public final int  ACCURACY_LIMIT_METERS     = 30;
-    public final int  MAX_ACCURACY_FAILURE_TRYS = 15;
-    public final int  MAX_FIX_WAIT_SECONDS      = 10;
-
     public enum LocationReceiver_CONFIGURATION
     {
         SLEEP_UNTIL_PROX,
@@ -40,7 +36,11 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 
     String                       DEBUG_TAG               = this.getClass().getSimpleName();
 
-    static  final int            ALARM_INRANGE_PROX_MIN  = 5;
+    static final int             ACCURACY_LIMIT_METERS     = 30;
+    static final int             MAX_ACCURACY_FAILURE_TRYS = 15;
+    static final int             MAX_FIX_WAIT_SECONDS      = 10;
+    static final int             ALARM_INRANGE_PROX_MIN    = 5;
+
     static LatLng                m_currentLocationLatLng = null;
 
     static MyService             m_context               = null;
@@ -205,25 +205,6 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 activateLocation(latLng.name, latLng.factive);
         }
     }
-    static
-    private String formatTimeDelta (long msecStart, long msecEnd)
-    {
-        long diffInSeconds = (msecEnd-msecStart)/1000;
-
-        long diff[] = new long[] { 0, 0, 0, 0 };
-        /* sec */  diff[3] = (diffInSeconds >= 60 ? diffInSeconds % 60 : diffInSeconds);
-        /* min */  diff[2] = (diffInSeconds = (diffInSeconds / 60)) >= 60 ? diffInSeconds % 60 : diffInSeconds;
-        /* hours */diff[1] = (diffInSeconds = (diffInSeconds / 60)) >= 24 ? diffInSeconds % 24 : diffInSeconds;
-        /* days */ diff[0] = (diffInSeconds = (diffInSeconds / 24));
-
-        return(String.format(
-                "%03d d %02d:%02d:%02d",
-                diff[0],
-                diff[1],
-                diff[2],
-                diff[3] ));
-    }
-
     /**
      *
      * @return
@@ -254,9 +235,9 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         returnlist.add("Proximity  : "+ m_inProximity);
         returnlist.add("Counters   : onLoc ("+m_onLocationChangeCnt+") onProx ("+m_onReceiveProximityCnt+") onAlarm ("+m_callbackAlarmCnt+")");
         returnlist.add("Nearest    : "+(latLng == null?"N/A":String.format("%s @ %d",latLng.name, latLng.lastDistMeter)));
-        returnlist.add("UpTime     : "+formatTimeDelta(m_svcStartTimeMsec,System.currentTimeMillis()));
+        returnlist.add("UpTime     : "+Util.formatTimeDelta(m_svcStartTimeMsec,System.currentTimeMillis()));
         returnlist.add("Current Loc: "+String.format("%8.4f,%8.4f", currentLoc.lat, currentLoc.lng));
-        returnlist.add("ActiveTime : "+(m_activeName ==null?"N/A":formatTimeDelta(m_activeTimeStart,System.currentTimeMillis())));
+        returnlist.add("ActiveTime : "+(m_activeName ==null?"N/A":Util.formatTimeDelta(m_activeTimeStart,System.currentTimeMillis())));
 
         String[] stringArray = returnlist.toArray(new String[0]);
 
@@ -533,7 +514,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 m_arrayLocationActivityHistory.put(getCurrentTimeMills(),
                                                    String.format(getDateString(true) + " %-10s : %s ",
                                                                                                    (name==null?"":name),
-                                                                                                   (name==null ? "N/A" : formatTimeDelta(m_activeTimeStart,System.currentTimeMillis()))));
+                                                                                                   (name==null ? "N/A" : Util.formatTimeDelta(m_activeTimeStart,System.currentTimeMillis()))));
                 int dist = trueDistance-triggerDistance;
                 if (dist < 0)
                 {
@@ -557,7 +538,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
             if (m_trackIdle)
             {
                 m_arrayLocationActivityHistory.put(getCurrentTimeMills(),
-                                                   String.format(getDateString(true) + " between : %s", (formatTimeDelta(m_activeTimeStart, System.currentTimeMillis()))));
+                                                   String.format(getDateString(true) + " between : %s", (Util.formatTimeDelta(m_activeTimeStart, System.currentTimeMillis()))));
                 saveStuff();
             }
         }
@@ -823,6 +804,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
     {
         return new ArrayList<String>(m_arrayLocationActivityHistory.values());
     }
+
+
 
     /**
      *

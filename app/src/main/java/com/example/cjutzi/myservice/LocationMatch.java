@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by cjutzi on 11/22/17.
@@ -12,8 +13,8 @@ import java.util.HashMap;
 
 public class LocationMatch
 {
-    static String DEBUG_TAG = "LocationMatch";
-    static int m_lastUniqueUsed = 100;
+    static String   DEBUG_TAG        = "LocationMatch";
+    static int      m_lastUniqueUsed = 100;
 
     static HashMap<String, Object> m_locationList = new HashMap<String, Object>();
     static Context m_context = null;
@@ -105,6 +106,8 @@ public class LocationMatch
      */
     private static void calcListDistance (double lat, double lng, float accuracy)
     {
+        Log.i(DEBUG_TAG, "calcListDistance()");
+
         for (String key : m_locationList.keySet())
         {
             LatLng latLng = (LatLng) m_locationList.get(key);
@@ -116,21 +119,21 @@ public class LocationMatch
             latLng.lastAccuracy = accuracy;
             m_locationList.put(latLng.name, latLng); // ??
 
-            Log.i(DEBUG_TAG, "calcListDistance() : Distance from (" + key + ") is (" + dist + ") in meters");
+            Log.i(DEBUG_TAG, String.format("calcListDistance() : Distance from (" + key + ") is (" + dist + ")m - Active Time ("+Util.formatTimeDelta(0,latLng.activeTimeMsec) +") lastAccuracy = "+latLng.lastAccuracy));
         }
     }
 
     /**
      *
      * @param name
-     * @param activeTime
+     * @param activeTimeMsec
      */
-    public static void addActiveTime (String name, long activeTime)
+    public static void addActiveTime (String name, long activeTimeMsec)
     {
         LatLng latLng = getLocationBuyKey(name);
         if (latLng != null)
         {
-            latLng.activeTime += activeTime;
+            latLng.activeTimeMsec += activeTimeMsec;
             saveStuff();
         }
     }
@@ -316,6 +319,12 @@ public class LocationMatch
         return null;
     }
 
+    /**
+     *
+     * @param location
+     * @param active
+     * @return
+     */
     public static LatLng activateLocation(String location, boolean active)
     {
         for (String key : m_locationList.keySet())
@@ -331,6 +340,12 @@ public class LocationMatch
         }
         return null;
     }
+
+    /**
+     *
+     * @param location
+     * @return
+     */
     public static String getLocationKey(String location)
     {
         for (String key : m_locationList.keySet())
@@ -344,6 +359,12 @@ public class LocationMatch
         }
         return "";
     }
+
+    /**
+     *
+     * @param location
+     * @return
+     */
     public static LatLng getLocationBuyKey(String location)
     {
         for (String key : m_locationList.keySet())
@@ -356,6 +377,44 @@ public class LocationMatch
             }
         }
         return null;
+    }
+
+    /**
+     *  Will be dead code if I can get the Customer Adaptor to work.
+     *
+     * @return
+     */
+    static
+    public  ArrayList<String> getTimeSpentWhere()
+
+    {
+        ArrayList<String>  retArray = new ArrayList<String>();
+
+        for (String key :  m_locationList.keySet())
+        {
+            LatLng latLng = (LatLng) m_locationList.get(key);
+            retArray.add(String.format(" %-20s  %20s",latLng.name, Util.formatTimeDelta(0,latLng.activeTimeMsec)));
+        }
+        return retArray;
+    }
+
+    /**
+     *
+     * @return
+     */
+    static
+    public  Map<String, Long> getTimeSpentWhereMap()
+
+    {
+        HashMap<String, Long> retMap = new HashMap<String, Long>();
+
+        for (String key :  m_locationList.keySet())
+        {
+            LatLng latLng = (LatLng) m_locationList.get(key);
+            retMap.put(latLng.name, latLng.activeTimeMsec);
+           //retMap.put(latLng.name, Util.formatTimeDelta(0,latLng.activeTimeMsec));
+        }
+        return retMap;
     }
     /**
      *

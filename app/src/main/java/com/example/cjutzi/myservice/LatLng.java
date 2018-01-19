@@ -28,7 +28,7 @@ class LatLng implements java.io.Serializable
     Integer     lastDistMeter;
     float       lastAccuracy;
     int         uniqueInt;
-    long        activeTime;
+    long activeTimeMsec;
     long        idleTime;
 
     /**

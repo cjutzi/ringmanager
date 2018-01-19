@@ -33,6 +33,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Created by cjutzi on 11/13/17.
@@ -113,6 +114,9 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         m_button = (Button) findViewById(R.id.tracks_clear);
         m_button.setOnClickListener(this);
 
+        m_button = (Button) findViewById(R.id.getTimeSpentWhere);
+        m_button.setOnClickListener(this);
+
         CheckBox rb;
         rb = (CheckBox) findViewById(R.id.sleep_until_prox);
         rb.setOnClickListener(this);
@@ -133,6 +137,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         rb.setOnClickListener(this);
         LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_LOCATIONS,m_trackLocations.toString());
         rb.setChecked(m_trackLocations);
+
 
 
 
@@ -230,6 +235,48 @@ view.setPadding(0,0,0,0);
             });
 
     }
+
+
+    /**
+     *
+     */
+    private void setupTimeSpentWhere()
+    {
+        Map<String, Long> myMap = LocationMatch.getTimeSpentWhereMap();
+        if (myMap == null || myMap.size() == 0)
+            return;
+
+        setContentView (R.layout.simple_listview);
+        ListView lv=(ListView)findViewById(R.id.simplelistview);
+        UICustomMapAdapter adapter = new UICustomMapAdapter(this, myMap);
+        lv.setAdapter(adapter);
+
+//        ArrayList<String> timeSpentWhere = LocationMatch.getTimeSpentWhere();
+//
+//        if (timeSpentWhere == null || timeSpentWhere.size() == 0)
+//            return;
+//
+//        setContentView(R.layout.simple_listview);
+//        ListView lv=(ListView)findViewById(R.id.simplelistview);
+//        lv.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1 , timeSpentWhere)
+//        {
+//            @Override
+//            public View getView(int position, View convertView, ViewGroup parent){
+//                // Get the current item from ListView
+//                View view = super.getView(position,convertView,parent);
+//                view.setPadding(0,0,0,0);
+////                    // Get the Layout Parameters for ListView Current Item View
+////                    ViewGroup.LayoutParams params = view.getLayoutParams();
+////
+////                    // Set the height of the Item View
+////                    params.height = 50;
+////                    view.setLayoutParams(params);
+//
+//                return view;
+//            }
+//        });
+
+    }
     /**
      * this sets up the list current locaitons menu
      */
@@ -308,6 +355,10 @@ view.setPadding(0,0,0,0);
             /* pull up location menu button */
             case R.id.getHistory:
                 setupHistoryMenu();
+                break;
+
+            case R.id.getTimeSpentWhere:
+                setupTimeSpentWhere();
                 break;
 
             case R.id.getLocations:
@@ -432,7 +483,8 @@ view.setPadding(0,0,0,0);
                     else
                         chkBoxVibr.setChecked(true);
                 }
-            break;
+                break;
+
             case R.id.addloc_ok:
                 {
                     CheckBox chkBoxVibr    = (CheckBox) findViewById(R.id.vibrate);
@@ -513,8 +565,6 @@ view.setPadding(0,0,0,0);
                 Log.i(DEBUG_TAG, "onClick.show_cur_map()");
                 break;
 
-
-
             case R.id.stopService:
                 Log.i(DEBUG_TAG, "onClick.stopService()");
                 m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_STOPSVC, null);
@@ -532,6 +582,7 @@ view.setPadding(0,0,0,0);
                     LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.SLEEP_UNTIL_PROX,m_sleepUtilProx.toString());
                 }
                 break;
+
             case R.id.track_idle:
                 Log.i(DEBUG_TAG, "onClick.track_idle()");
                     {
@@ -542,6 +593,7 @@ view.setPadding(0,0,0,0);
                         LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_IDLE,m_trackIdle.toString());
                     }
                     break;
+
             case R.id.track_locations:
                     Log.i(DEBUG_TAG, "onClick.m_track_locations()");
                     {
@@ -551,6 +603,7 @@ view.setPadding(0,0,0,0);
                         LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_LOCATIONS,m_trackLocations.toString());
                     }
                     break;
+
             case R.id.track_proxy_trigger:
                     Log.i(DEBUG_TAG, "onClick.m_track_proxy_trigger()");
                     {
