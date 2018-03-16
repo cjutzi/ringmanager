@@ -222,13 +222,13 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                 public View getView(int position, View convertView, ViewGroup parent){
                     // Get the current item from ListView
                     View view = super.getView(position,convertView,parent);
-view.setPadding(0,0,0,0);
-//                    // Get the Layout Parameters for ListView Current Item View
-//                    ViewGroup.LayoutParams params = view.getLayoutParams();
+                    view.setPadding(0,0,0,0);
+//                  // Get the Layout Parameters for ListView Current Item View
+//                  ViewGroup.LayoutParams params = view.getLayoutParams();
 //
-//                    // Set the height of the Item View
-//                    params.height = 50;
-//                    view.setLayoutParams(params);
+//                  // Set the height of the Item View
+//                  params.height = 50;
+//                  view.setLayoutParams(params);
 
                     return view;
                 }

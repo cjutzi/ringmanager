@@ -44,7 +44,7 @@ public class UICustomMapAdapter extends BaseAdapter
 
         for (int i = 0 ; i< m_size; i++)
         {
-            m_value[i] = Util.formatTimeDelta(0,vals[i]);
+            m_value[i] = Util.formatTimeDelta(0,vals[i]*1000); // converted LatLng to seconds 3/1/2018
             m_key[i]   = keys[i];
         }
     }

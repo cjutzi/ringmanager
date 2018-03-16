@@ -22,7 +22,7 @@ public class LocationMatch
     static
     {
         m_locationList.put("Living Savior", new LatLng("Living Savior", 45.3749701, -122.7668027, 200, true, LatLng.RING_TYPE.VIBRATE, 1));
-        m_locationList.put("Intel JF", new LatLng("Intel JF", 45.543054, -122.960508, 30, true, LatLng.RING_TYPE.FULL,2));
+        m_locationList.put("Intel JF", new LatLng("Intel JF", 45.543054, -122.960508, 100, true, LatLng.RING_TYPE.FULL,2));
         m_locationList.put("Home", new LatLng("Home", 45.410034, -122.710750, 100, true, LatLng.RING_TYPE.FULL, 3));
         m_locationList.put("Zupan's Market", new LatLng("Zupan's Market", 45.407277, -122.7250246, 50, true, LatLng.RING_TYPE.FULL,4 ));
         m_locationList.put("SJC JetCenter", new LatLng("SJC JetCenter", 37.3591078, -121.932838, 50, true, LatLng.RING_TYPE.VIBRATE, 5));
@@ -119,7 +119,7 @@ public class LocationMatch
             latLng.lastAccuracy = accuracy;
             m_locationList.put(latLng.name, latLng); // ??
 
-            Log.i(DEBUG_TAG, String.format("calcListDistance() : Distance from (" + key + ") is (" + dist + ")m - Active Time ("+Util.formatTimeDelta(0,latLng.activeTimeMsec) +") lastAccuracy = "+latLng.lastAccuracy));
+            Log.i(DEBUG_TAG, String.format("calcListDistance() : Distance from (" + key + ") is (" + dist + ")m - Active Time ("+Util.formatTimeDelta(0,latLng.activeTimeSec) +") lastAccuracy = "+latLng.lastAccuracy));
         }
     }
 
@@ -133,7 +133,7 @@ public class LocationMatch
         LatLng latLng = getLocationBuyKey(name);
         if (latLng != null)
         {
-            latLng.activeTimeMsec += activeTimeMsec;
+            latLng.activeTimeSec += (activeTimeMsec/1000);
             saveStuff();
         }
     }
@@ -393,7 +393,7 @@ public class LocationMatch
         for (String key :  m_locationList.keySet())
         {
             LatLng latLng = (LatLng) m_locationList.get(key);
-            retArray.add(String.format(" %-20s  %20s",latLng.name, Util.formatTimeDelta(0,latLng.activeTimeMsec)));
+            retArray.add(String.format(" %-20s  %20s",latLng.name, Util.formatTimeDelta(0,latLng.activeTimeSec *1000)));
         }
         return retArray;
     }
@@ -411,8 +411,8 @@ public class LocationMatch
         for (String key :  m_locationList.keySet())
         {
             LatLng latLng = (LatLng) m_locationList.get(key);
-            retMap.put(latLng.name, latLng.activeTimeMsec);
-           //retMap.put(latLng.name, Util.formatTimeDelta(0,latLng.activeTimeMsec));
+            retMap.put(latLng.name, latLng.activeTimeSec);
+           //retMap.put(latLng.name, Util.formatTimeDelta(0,latLng.activeTimeSec*1000));
         }
         return retMap;
     }
@@ -450,6 +450,13 @@ public class LocationMatch
         if (retVal != null)
             m_locationList.putAll(retVal);
         Log.i(DEBUG_TAG, "restoreStuff");
+        for (String key : m_locationList.keySet())
+        {
+            LatLng latLng = (LatLng) m_locationList.get(key);
+//          latLng.activeTimeSec = 0;
+            Log.i(DEBUG_TAG, "activeName "+latLng.name+" activeTimeSec "+latLng.activeTimeSec);
+        }
+//        saveStuff();
     }
 }
 

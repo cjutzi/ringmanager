@@ -18,18 +18,16 @@ class LatLng implements java.io.Serializable
         VIBRATE,
     }
 
-
-    String      name;
-    double      lat;
-    double      lng;
-    int         triggerDist;
-    boolean     factive;
-    RING_TYPE   ringType;
-    Integer     lastDistMeter;
-    float       lastAccuracy;
-    int         uniqueInt;
-    long activeTimeMsec;
-    long        idleTime;
+    String          name;
+    double          lat;
+    double          lng;
+    int             triggerDist;
+    boolean         factive;
+    RING_TYPE       ringType;
+    Integer         lastDistMeter;
+    float           lastAccuracy;
+    int             uniqueInt;
+    long            activeTimeSec;
 
     /**
      *
@@ -48,7 +46,7 @@ class LatLng implements java.io.Serializable
         this.lastDistMeter = -1;
         ringType = FULL;
         this.uniqueInt = uniqueInt;
-        long activeTime = 0;
+//        long activeTime = 0;
     }
     /**
      *
@@ -89,7 +87,7 @@ class LatLng implements java.io.Serializable
         this.lastDistMeter = -1;
         this.uniqueInt = uniqueInt;
         this.lastAccuracy = accuracy;
-        long activeTime = 0;
+//        long activeTime = 0;
     }
 
     /**
@@ -103,14 +101,16 @@ class LatLng implements java.io.Serializable
     LatLng (String name, double lat, double lng, int triggerDist, boolean active, RING_TYPE ringType, int uniqueInt)
     {
         this.name = name;
-        this.lat  = lat;
-        this.lng  = lng;
+        this.lat = lat;
+        this.lng = lng;
         this.triggerDist = triggerDist;
         this.factive = active;
         this.ringType = ringType;
         this.lastDistMeter = -1;
         this.uniqueInt = uniqueInt;
-        long activeTime = 0;
+//        long activeTime = 0;
     }
+
+
 
 }

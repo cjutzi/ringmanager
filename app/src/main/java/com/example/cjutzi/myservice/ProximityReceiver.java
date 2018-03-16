@@ -8,13 +8,15 @@ import android.content.Intent;
  * Created by cjutzi on 12/4/17.
  */
 
-public class ProximityReceiver extends BroadcastReceiver {
+public class ProximityReceiver extends BroadcastReceiver
+{
     /**
      * @param context
      * @param intent
      */
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public void onReceive(Context context, Intent intent)
+    {
         LocationReceiver.onProximityReceive(context, intent);
     }
 }

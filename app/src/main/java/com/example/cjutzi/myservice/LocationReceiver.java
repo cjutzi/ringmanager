@@ -14,6 +14,7 @@ import android.util.Log;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -41,7 +42,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
     static final int             MAX_FIX_WAIT_SECONDS      = 10;
     static final int             ALARM_INRANGE_PROX_MIN    = 5;
 
-    static LatLng                m_currentLocationLatLng = null;
+    static LatLng                m_currentLocationLatLng   = null;
+    static float                 m_currentLocationSpeedMPS =  0;
 
     static MyService             m_context               = null;
     Boolean                      m_f_WeTurnedOnVibrate   = false;
@@ -69,7 +71,11 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
     */
     static  final       Integer lock                     = new Integer(1);
     static              String  m_activeName             = null;
-                        long    m_activeTimeStart        = 0;
+    long    m_activeTimeStart                            = 0;
+    long    m_lastSavedActiveTimeStart                   = 0;  // used to save tenative state of total time at one location - allows accumiation of time in saved database as
+                                                               // as opposed to only saving it when a transition occurs.. what was occuring was the service was getting killed
+                                                               // and if it died while at a location, non of the locaiton time was accumulated. so now we save a snap shot
+                                                               // of the delta time.  THis variable tracks time since last saved..
 
 
     static LocationReceiver      m_locationReceiver      = null;  // TODO - fix this but look at ProximityReceiver since it calls this statically.. need to figure this out.
@@ -136,8 +142,9 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         setAlarmIntent(ALARM_INRANGE_PROX_MIN*60, ALARM_INRANGE_PROX_MIN*60);
 
         m_locationManager   = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        m_svcStartTimeMsec  = System.currentTimeMillis();
-        m_activeTimeStart   = System.currentTimeMillis();
+        m_svcStartTimeMsec  =
+            m_activeTimeStart  =
+                m_lastSavedActiveTimeStart = System.currentTimeMillis();
         restoreStuff();
         m_arrayLocationActivityHistory.put(getCurrentTimeMills(),String.format(getDateString(true) + " svc started "));
         saveStuff();
@@ -206,6 +213,15 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         }
     }
     /**
+     *
+     * @return
+     */
+
+    static
+    public Float  getCurrentSpeedMPS()
+    {
+        return m_currentLocationSpeedMPS;  // updated by timer call and locationReqeust with callback
+    }/**
      *
      * @return
      */
@@ -321,10 +337,13 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
             m_currentLocationLatLng.lat = location.getLatitude();
             m_currentLocationLatLng.lng = location.getLongitude();
             m_currentLocationLatLng.lastAccuracy = location.getAccuracy();
+            m_currentLocationSpeedMPS            = location.getSpeed();
         }
         else
         {
             m_currentLocationLatLng = new LatLng("CurrentLocation", location.getLatitude(), location.getLongitude(), -1, false, 0, location.getAccuracy());
+            m_currentLocationSpeedMPS = 0.0f;
+
         }
 
         /*
@@ -346,7 +365,15 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 m_accuracyTry = 0;
             }
         }
-        processCheckIfInGeoFence(null, location.getAccuracy());
+        /* if you're moving at 5MPH or so.. abort. don't bother, you're driving, biking or running */
+        /* cjutzi - 3/16/2018 */
+        if (!(m_currentLocationSpeedMPS > 3.0f))
+            processCheckIfInGeoFence(null, location.getAccuracy());
+        else       /* cjutzi - 3/16/2018 */
+        {
+            Log.i(DEBUG_TAG, "onLocationChange : provider = " + location.getProvider() + "  Accuracy = " + location.getAccuracy() + " -- aborting because you are moving > 5MPH "+m_currentLocationSpeedMPS);
+            addLocationActivityHistoryBlock(m_activeName+" speed="+m_currentLocationSpeedMPS, m_currentLocationLatLng.triggerDist, m_currentLocationLatLng.lastDistMeter, m_currentLocationLatLng.lastAccuracy, false);
+        }
     }
 
     /**
@@ -550,6 +577,14 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
      * The accuracy of the Proximity thing is shit..
      * Just run through the list and choose a location if active.. be done.. make it simple..
      *
+     * If you are moving at say 5mph or say 3meters/sec abort.. we're moving and you're not
+     * residing anywhere (unless you're running to your desk) - I've put this check in
+     * where this is called, not in this proceedure. (personal choice)
+     *
+     * this proceedure used to be called in a couple of places, but now only one..
+     * timer --> Geo Sync -->  LocationReceiver.Update so this now will be called at each
+     *
+     *
      * @param name
      * @param accuracy
      *
@@ -558,6 +593,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
     {
         LatLng latLngClosestActive;
         LatLng latLngCurrent             = getCurrentLoc();
+        Float  speedCurrent              = getCurrentSpeedMPS();
 
         if (latLngCurrent == null && name != null)
         {
@@ -580,11 +616,18 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 if (m_activeName != null)
                 {
                     // do nothing.. we've entered again.. this can happen given I over ride the in/out on the Prox alarm.
+                    // this also occurs on the timeout. If you're stil where you were.. save the current time you've been there and
+                    // reset the time.. Also.. Save it off incase the service dies.. :-)..
+                    // this keeps you from loosing alot of recorded time if the service dies after N hours and you have not updated the
+                    // location's active time..
                     //
                     if (m_activeName.equals(latLngClosestActive.name))
                     {
                         String t1 = latLngClosestActive.name + "  " + latLngClosestActive.ringType + " - " + (latLngClosestActive.factive ? "active" : "in-active");
                         m_context.iconNotificationCreateAndShow(t1, t1, getNoficationArray());
+                        //LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_lastSavedActiveTimeStart);
+                        LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_lastSavedActiveTimeStart);
+                        m_lastSavedActiveTimeStart = System.currentTimeMillis();
                         return;
                     }
                     //
@@ -593,7 +636,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                     LatLng latLngActive = LocationMatch.getLocationBuyKey(m_activeName);
                     manageAudioBasedOnEnterLeave(latLngActive, false);
                     addLocationActivityHistoryBlock(m_activeName, latLngActive.triggerDist, latLngActive.lastDistMeter,latLngActive.lastAccuracy, false);
-                    LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_activeTimeStart);
+                    //LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_activeTimeStart);
+                    LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_lastSavedActiveTimeStart);
                     m_activeTimeStart = System.currentTimeMillis();  // really this is a start-idle time, but I'm using it
                     m_activeName = null;
                 }
@@ -604,7 +648,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 manageAudioBasedOnEnterLeave(latLngClosestActive, true);
                 addLocationActivityHistoryBlock(null, -1, -1, -1.0f, true);
                 m_activeName = latLngClosestActive.name;
-                m_activeTimeStart = System.currentTimeMillis();
+                m_lastSavedActiveTimeStart =
+                        m_activeTimeStart = System.currentTimeMillis();
                 String t1 = latLngClosestActive.name + "  " + latLngClosestActive.ringType + " - " + (latLngClosestActive.factive ? "active" : "in-active");
                 m_context.iconNotificationCreateAndShow(t1, t1, getNoficationArray());
                 return;
@@ -614,11 +659,22 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 if (m_activeName != null)
                 {
                     LatLng latLngActive  = LocationMatch.getLocationBuyKey(m_activeName);
-                    manageAudioBasedOnEnterLeave(latLngActive, false);
-                    addLocationActivityHistoryBlock(m_activeName, latLngActive.triggerDist, latLngActive.lastDistMeter, latLngActive.lastAccuracy, false);
-                    LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_activeTimeStart);
-                    m_activeName = null;
-                    m_activeTimeStart = System.currentTimeMillis();
+                    // Added if statement to try and mitigate against false triggers when accuracy is shit.
+                    // Feb-28-2018 - cjutzi
+                    if (latLngActive.lastDistMeter >= latLngActive.triggerDist+latLngActive.lastAccuracy)
+                    {
+                        manageAudioBasedOnEnterLeave(latLngActive, false);
+                        addLocationActivityHistoryBlock(m_activeName, latLngActive.triggerDist, latLngActive.lastDistMeter, latLngActive.lastAccuracy, false);
+                        LocationMatch.addActiveTime(m_activeName, System.currentTimeMillis() - m_activeTimeStart);
+                        m_activeName = null;
+                        m_lastSavedActiveTimeStart =
+                                m_activeTimeStart = System.currentTimeMillis();
+                    }
+                    else
+                    {
+                        addLocationActivityHistoryBlock(m_activeName + "_FALSE_TRIG", latLngActive.triggerDist, latLngActive.lastDistMeter, latLngActive.lastAccuracy, false);
+                        return;
+                    }
                 }
             }
         }
@@ -789,7 +845,6 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         else
             reqeustGPSLocation(providerBackup);
 
-
         //  occurs in callback on provider lock ---      processCheckIfInGeoFence();
     }
 
@@ -802,10 +857,11 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
     public ArrayList<String> getLocationActivityHistory()
 
     {
-        return new ArrayList<String>(m_arrayLocationActivityHistory.values());
+
+        ArrayList<String> reverseList = new ArrayList(m_arrayLocationActivityHistory.values());
+        Collections.reverse(reverseList);
+        return reverseList;
     }
-
-
 
     /**
      *

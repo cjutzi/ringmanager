@@ -11,7 +11,7 @@ import android.util.Log;
 
 public class AlarmBroadcastReceiver extends BroadcastReceiver
 {
-    long lastCalled = 0;
+    Long lastCalled = 0L;
     /**
      *
      */
@@ -22,11 +22,14 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        if (lastCalled == 0)
-            lastCalled = System.currentTimeMillis();
-        else
-            Log.i("AlarmBroadcastReceiver", "last called : "+((System.currentTimeMillis()-lastCalled)/1000)+" seconds ago");
+        synchronized (lastCalled)
+        {
+            if (lastCalled == 0)
+                lastCalled = System.currentTimeMillis();
+            else
+                Log.i("AlarmBroadcastReceiver", "last called : " + ((System.currentTimeMillis() - lastCalled) / 1000) + " seconds ago");
 
-        LocationReceiver.onAlarmReceive(context, intent);
+            LocationReceiver.onAlarmReceive(context, intent);
+        }
     }
 }

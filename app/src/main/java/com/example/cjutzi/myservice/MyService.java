@@ -21,7 +21,6 @@ import android.util.Log;
 public class MyService extends Service implements AsyncActivityInterface
 {
     String DEBUG_TAG = this.getClass().getSimpleName();
-    static long startTimeMsec = 0;
 
     static final int BASE_ALARM_SEC = 120;
     static final int BASE_LOC_WAKE = 120;
@@ -106,7 +105,6 @@ public class MyService extends Service implements AsyncActivityInterface
     {
         super.onCreate();
         Log.i(DEBUG_TAG, "onCreate()");
-        startTimeMsec = System.currentTimeMillis();
         restoreStuff();
         String t2[] = new String[]
                 {
