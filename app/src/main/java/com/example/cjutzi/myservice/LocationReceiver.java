@@ -35,26 +35,33 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         TRACK_CLEAR,
     };
 
-    String                       DEBUG_TAG               = this.getClass().getSimpleName();
+    String                       DEBUG_TAG                  = this.getClass().getSimpleName();
 
-    static final int             ACCURACY_LIMIT_METERS     = 30;
-    static final int             MAX_ACCURACY_FAILURE_TRYS = 15;
-    static final int             MAX_FIX_WAIT_SECONDS      = 10;
-    static final int             ALARM_INRANGE_PROX_MIN    = 5;
+    static final int             ACCURACY_LIMIT_METERS      = 30;
+    static final int             MAX_ACCURACY_FAILURE_TRYS  = 15;
+    static final int             MAX_FIX_WAIT_SECONDS       = 10;
+    static final int             ALARM_INRANGE_PROX_MIN     = 5;
+    static final int             ALARM_STARTRANGE_PROX_MIN  = 1;
 
-    static LatLng                m_currentLocationLatLng   = null;
-    static float                 m_currentLocationSpeedMPS =  0;
+    /** CURRENT LOCATION STATE - OR LAST **/
 
-    static MyService             m_context               = null;
-    Boolean                      m_f_WeTurnedOnVibrate   = false;
-    LocationManager              m_locationManager       = null;
-    int                          m_currentAlarmPeriodMin = ALARM_INRANGE_PROX_MIN;
-    int                          m_onLocationChangeCnt   = 0;
-    int                          m_callbackAlarmCnt      = 0;
-    int                          m_onReceiveProximityCnt = 0;
-    long                         m_svcStartTimeMsec      = 0;
-    boolean                      m_inProximity           = true;
-    boolean                      m_alarmActive           = true;
+    static private double         m_currentLocationLat      = 0.0d;
+    static private double         m_currentLocationLng      = 0.0d;
+    static private float          m_currentLocaitonAcc      = 0.0f;
+    static private float          m_currentLocationSpeedmps = 0.0f;
+    static private float          m_currentLocationBearning = 0.0f;    // never really used.
+
+
+    static MyService             m_context                  = null;
+    Boolean                      m_f_WeTurnedOnVibrate      = false;
+    LocationManager              m_locationManager          = null;
+    int                          m_currentAlarmPeriodMin    = ALARM_INRANGE_PROX_MIN;
+    int                          m_onLocationChangeCnt      = 0;
+    int                          m_callbackAlarmCnt         = 0;
+    int                          m_onReceiveProximityCnt    = 0;
+    long                         m_svcStartTimeMsec         = 0;
+    boolean                      m_inProximity              = true;
+    boolean                      m_alarmActive              = true;
 
     /* configureation stuff */
     static private Boolean m_sleepUtilProx      = false;
@@ -212,16 +219,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 activateLocation(latLng.name, latLng.factive);
         }
     }
-    /**
-     *
-     * @return
-     */
 
-    static
-    public Float  getCurrentSpeedMPS()
-    {
-        return m_currentLocationSpeedMPS;  // updated by timer call and locationReqeust with callback
-    }/**
+    /**
      *
      * @return
      */
@@ -229,7 +228,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
     static
     public LatLng  getCurrentLoc()
     {
-        return m_currentLocationLatLng;  // updated by timer call and locationReqeust with callback
+        return new LatLng("", m_currentLocationLat, m_currentLocationLng, -1, false, 0);
     }
     /**
      *
@@ -237,22 +236,34 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
      */
     private  String[] getNoficationArray()
     {
-        LatLng currentLoc = getCurrentLoc();
-        if (currentLoc == null && m_activeName != null)
-            currentLoc = LocationMatch.getLocationBuyKey(m_activeName);
+
+        double locLat = m_currentLocationLat;
+        double locLng = m_currentLocationLng;
+        float  locAcc = m_currentLocaitonAcc;
+
+        LatLng closestLatLng = LocationMatch.getClosest(m_currentLocationLat, m_currentLocationLng, m_currentLocaitonAcc);
+
+        /* if you are active.. use the active location */
+
+        if (m_activeName != null)
+        {
+            LatLng currentLoc =  LocationMatch.getLocationBuyKey(m_activeName);
+            locLat = currentLoc.lat;
+            locLng = currentLoc.lng;
+            locAcc = m_currentLocaitonAcc;
+
+        }
         else
-        if (currentLoc == null)
             return new String [] { "" };
 
-        LatLng latLng = LocationMatch.getClosest(currentLoc.lat, currentLoc.lng, currentLoc.lastAccuracy);
         ArrayList<String> returnlist = new ArrayList<String>();
 
         returnlist.add("standby: "+ (!m_alarmActive?("sleeping"):(" "+ m_currentAlarmPeriodMin +" min"))+" alarm: "+(m_alarmActive?"on":"off")+" FixFail : "+m_abortedGPSFixes);
         returnlist.add("Proximity  : "+ m_inProximity);
         returnlist.add("Counters   : onLoc ("+m_onLocationChangeCnt+") onProx ("+m_onReceiveProximityCnt+") onAlarm ("+m_callbackAlarmCnt+")");
-        returnlist.add("Nearest    : "+(latLng == null?"N/A":String.format("%s @ %d",latLng.name, latLng.lastDistMeter)));
+        returnlist.add("Nearest    : "+(closestLatLng == null?"N/A":String.format("%s @ %d",closestLatLng.name, closestLatLng.lastDistMeter)));
         returnlist.add("UpTime     : "+Util.formatTimeDelta(m_svcStartTimeMsec,System.currentTimeMillis()));
-        returnlist.add("Current Loc: "+String.format("%8.4f,%8.4f", currentLoc.lat, currentLoc.lng));
+        returnlist.add("Current Loc: "+String.format("%8.4f,%8.4f", locLat, locLng));
         returnlist.add("ActiveTime : "+(m_activeName ==null?"N/A":Util.formatTimeDelta(m_activeTimeStart,System.currentTimeMillis())));
 
         String[] stringArray = returnlist.toArray(new String[0]);
@@ -313,38 +324,16 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 
         m_onLocationChangeCnt++;
 
-        double lat      = 0.0,
-               lng      = 0.0,
-               mtrAlt   = 0.0;
-        float mpsSpeed  = 0.0f;
-        double bearing  = 0.0f;
-
-        mtrAlt          = location.getAltitude();
-
         if (location.hasSpeed())
         {
-            mpsSpeed = location.getSpeed(); // meters per second (as documented.. sure wish I could know by the variable name :-)
-        }
-        bearing         = location.getBearing();
-
-        lng             = location.getLongitude();
-        lat             = location.getLatitude();
-
-
-        /* update current location */
-        if (m_currentLocationLatLng != null)
-        {
-            m_currentLocationLatLng.lat = location.getLatitude();
-            m_currentLocationLatLng.lng = location.getLongitude();
-            m_currentLocationLatLng.lastAccuracy = location.getAccuracy();
-            m_currentLocationSpeedMPS            = location.getSpeed();
+            m_currentLocationSpeedmps    = location.getSpeed(); // meters per second (as documented.. sure wish I could know by the variable name :-)
         }
         else
-        {
-            m_currentLocationLatLng = new LatLng("CurrentLocation", location.getLatitude(), location.getLongitude(), -1, false, 0, location.getAccuracy());
-            m_currentLocationSpeedMPS = 0.0f;
+            m_currentLocationSpeedmps    = 0.0f;
 
-        }
+        m_currentLocationBearning = location.getBearing();
+        m_currentLocationLng      = location.getLongitude();
+        m_currentLocationLat      = location.getLatitude();
 
         /*
            if the provider is Network.. flush it.
@@ -365,15 +354,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 m_accuracyTry = 0;
             }
         }
-        /* if you're moving at 5MPH or so.. abort. don't bother, you're driving, biking or running */
-        /* cjutzi - 3/16/2018 */
-        if (!(m_currentLocationSpeedMPS > 3.0f))
-            processCheckIfInGeoFence(null, location.getAccuracy());
-        else       /* cjutzi - 3/16/2018 */
-        {
-            Log.i(DEBUG_TAG, "onLocationChange : provider = " + location.getProvider() + "  Accuracy = " + location.getAccuracy() + " -- aborting because you are moving > 5MPH "+m_currentLocationSpeedMPS);
-            addLocationActivityHistoryBlock(m_activeName+" speed="+m_currentLocationSpeedMPS, m_currentLocationLatLng.triggerDist, m_currentLocationLatLng.lastDistMeter, m_currentLocationLatLng.lastAccuracy, false);
-        }
+        processCheckIfInGeoFence();
     }
 
     /**
@@ -480,9 +461,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
      */
     public void addLocation(String name, int triggerDistance, boolean factive, LatLng.RING_TYPE mode)
     {
-
-        LatLng latLng = getCurrentLoc();
-        addLocation(name, latLng.lat, latLng.lng, triggerDistance, factive, mode);
+        addLocation(name, m_currentLocationLat, m_currentLocationLng, triggerDistance, factive, mode);
     }
 
     /**
@@ -492,7 +471,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
     public void removeLocation(String name)
     {
         LatLng latLng = LocationMatch.deleteLocation(name);
-       manageProximityPendingIntent(latLng);
+        manageProximityPendingIntent(latLng);
     }
 
     /**
@@ -584,28 +563,17 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
      * this proceedure used to be called in a couple of places, but now only one..
      * timer --> Geo Sync -->  LocationReceiver.Update so this now will be called at each
      *
-     *
-     * @param name
-     * @param accuracy
-     *
      */
-    private void processCheckIfInGeoFence(String name, float accuracy)
+    private void processCheckIfInGeoFence()
     {
         LatLng latLngClosestActive;
-        LatLng latLngCurrent             = getCurrentLoc();
-        Float  speedCurrent              = getCurrentSpeedMPS();
-
-        if (latLngCurrent == null && name != null)
-        {
-            latLngClosestActive = LocationMatch.getLocationBuyKey(name);
-        }
-        else
-        {
-            latLngClosestActive = LocationMatch.getClosestActive(latLngCurrent.lat, latLngCurrent.lng, accuracy);
-        }
+        latLngClosestActive = LocationMatch.getClosestActive(m_currentLocationLat, m_currentLocationLng, m_currentLocaitonAcc);
 
         synchronized (lock)
         {
+            // if you have a close location
+            // that you're within the GeoFence..
+
             if (latLngClosestActive != null)
             {
                 /*
@@ -613,6 +581,9 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                    you are now moving to an activation of a location
                    if there is an active.. you need to de-activate.. if they are the same, do nothing.
                  */
+                //
+                // if you were active..
+                //
                 if (m_activeName != null)
                 {
                     // do nothing.. we've entered again.. this can happen given I over ride the in/out on the Prox alarm.
@@ -636,14 +607,24 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                     LatLng latLngActive = LocationMatch.getLocationBuyKey(m_activeName);
                     manageAudioBasedOnEnterLeave(latLngActive, false);
                     addLocationActivityHistoryBlock(m_activeName, latLngActive.triggerDist, latLngActive.lastDistMeter,latLngActive.lastAccuracy, false);
-                    //LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_activeTimeStart);
                     LocationMatch.addActiveTime (m_activeName, System.currentTimeMillis()-m_lastSavedActiveTimeStart);
                     m_activeTimeStart = System.currentTimeMillis();  // really this is a start-idle time, but I'm using it
                     m_activeName = null;
                 }
 
+                /* else you were in no-mans land */
+
                 /*
-                    transition to new location..
+                 * if you are moving fast.. just exit and wait until you stop moving..
+                 */
+                if (m_currentLocationSpeedmps > 3.0)
+                {
+                    addLocationActivityHistoryBlock(latLngClosestActive.name + "_TRANS_SPEED", latLngClosestActive.triggerDist, latLngClosestActive.lastDistMeter-1, latLngClosestActive.lastAccuracy, false);
+                    return;
+                }
+
+                /*
+                 * transition to new location..
                  */
                 manageAudioBasedOnEnterLeave(latLngClosestActive, true);
                 addLocationActivityHistoryBlock(null, -1, -1, -1.0f, true);
@@ -654,23 +635,55 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 m_context.iconNotificationCreateAndShow(t1, t1, getNoficationArray());
                 return;
             }
+            /*
+             * you are in no-mans land
+             */
             else
             {
+                /*
+                 * and you have an active location (you might have transitioned out .. no?)
+                 */
                 if (m_activeName != null)
                 {
                     LatLng latLngActive  = LocationMatch.getLocationBuyKey(m_activeName);
-                    // Added if statement to try and mitigate against false triggers when accuracy is shit.
-                    // Feb-28-2018 - cjutzi
+
+                    /*
+                     * Added if statement to try and mitigate against false triggers when accuracy is shit.
+                     * Feb-28-2018 - cjutzi
+                     */
                     if (latLngActive.lastDistMeter >= latLngActive.triggerDist+latLngActive.lastAccuracy)
                     {
                         manageAudioBasedOnEnterLeave(latLngActive, false);
                         addLocationActivityHistoryBlock(m_activeName, latLngActive.triggerDist, latLngActive.lastDistMeter, latLngActive.lastAccuracy, false);
-                        LocationMatch.addActiveTime(m_activeName, System.currentTimeMillis() - m_activeTimeStart);
+                        /*
+                         * if total time was < ALARM_STARTRANGE_PROX_MIN min, you were driving and you happend to come close enough to trigger
+                         * the geo-fence..
+                         * If so.. don't save it.. it was a transient thing.. :-).
+                         * or so I say. - cjutzi 3/16/18
+                         */
+                        long totalLastSavedTimeMsec      = (System.currentTimeMillis() - m_lastSavedActiveTimeStart);
+                        Long totalLastSavedTimeMinutes   = totalLastSavedTimeMsec/60/1000;
+                        Long totalActiveSavedTimeMinutes = (System.currentTimeMillis() - m_activeTimeStart)/60/1000;
+
+                        /* if  I'm on the first tick of the timer for a new location and you find your self in Libo.. (no mans land)..
+                         * don't count it.. just transition.  You might have been driving down the road.
+                         */
+                        if ( totalLastSavedTimeMinutes == totalActiveSavedTimeMinutes &&
+                             totalLastSavedTimeMinutes <= ALARM_STARTRANGE_PROX_MIN)
+
+                        {
+                            addLocationActivityHistoryBlock(m_activeName + "_TRANS_TIME ("+totalLastSavedTimeMsec/1000+" sec)", latLngActive.triggerDist, latLngActive.lastDistMeter, latLngActive.lastAccuracy, false);
+                        }
+                        else
+                        {
+                            addLocationActivityHistoryBlock(m_activeName + "_OUT ("+totalLastSavedTimeMsec/1000+" sec)", latLngActive.triggerDist, latLngActive.lastDistMeter, latLngActive.lastAccuracy, false);
+                            LocationMatch.addActiveTime(m_activeName, totalLastSavedTimeMsec);
+                        }
                         m_activeName = null;
                         m_lastSavedActiveTimeStart =
                                 m_activeTimeStart = System.currentTimeMillis();
                     }
-                    else
+                    else // accuracy not good enogh to justify exit.
                     {
                         addLocationActivityHistoryBlock(m_activeName + "_FALSE_TRIG", latLngActive.triggerDist, latLngActive.lastDistMeter, latLngActive.lastAccuracy, false);
                         return;
@@ -680,7 +693,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         }
         m_context.iconNotificationCreateAndShow("No Location Active", "No Location Active", getNoficationArray());
 
-        LatLng latLng = LocationMatch.getClosest(latLngCurrent.lat, latLngCurrent.lng, latLngCurrent.lastAccuracy);
+        LatLng latLng = LocationMatch.getClosest(m_currentLocationLat, m_currentLocationLng, m_currentLocaitonAcc);
 
         if ( (latLng != null) && latLng.lastDistMeter > 2000)
         {
@@ -718,7 +731,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 //        }
 //        else
         {
-            setAlarmIntent(1,ALARM_INRANGE_PROX_MIN*60);
+            /* first one is to test if we're still there.. if not.. we were driving by no?.. don't count it */
+            setAlarmIntent(ALARM_STARTRANGE_PROX_MIN*60,ALARM_INRANGE_PROX_MIN*60);
         }
 
 //        setAlarmIntent(ALARM_INRANGE_PROX_MIN*60,ALARM_INRANGE_PROX_MIN*60);

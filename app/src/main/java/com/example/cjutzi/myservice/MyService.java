@@ -127,15 +127,6 @@ public class MyService extends Service implements AsyncActivityInterface
          */
         m_locRcv.activateLocations(m_locMatch);
         m_locRcv.callback(0);   /* init the core callback stuff */
-
-
-//        m_locAr  = new AlarmReceiver(LocationReceiver.class.getSimpleName(),m_locRcv, 0); //BASE_LOC_WAKE);
-//        m_thisAr = new AlarmReceiver(this.getClass().getSimpleName(), this, BASE_ALARM_SEC);
-
-
-//        m_locMatch = new LocationMatch(this);
-//        m_locRcv.callback(0);   /* init the core callback stuff */
-
     }
 
     /*
