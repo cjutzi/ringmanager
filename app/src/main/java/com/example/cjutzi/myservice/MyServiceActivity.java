@@ -1,6 +1,7 @@
 package com.example.cjutzi.myservice;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -8,6 +9,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -48,6 +50,8 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
     */
     public  static Context                      myContext         = null;
     public  static Activity                     myActivity        = null;
+
+    public  View.OnClickListener                myOnclickListener = null;
     private ServiceConnection                   m_myServiceConn   = null;
     boolean                                     m_isBound         = false;
     Intent                                      m_myServiceIntent = null;
@@ -57,6 +61,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
     private Boolean m_trackIdle          = true;
     private Boolean m_trackProxTrigger   = false;
     private Boolean m_trackLocations     = true;
+
 
 //
 //    Boolean              m_checkBox1;
@@ -73,6 +78,8 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 
         myContext = this;
         myActivity = this;
+        myOnclickListener = this;
+
         m_myServiceIntent = new Intent(myContext, MyService.class);
 
          if (!m_isBound);
@@ -81,66 +88,8 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
             startService(m_myServiceIntent);
             bindService(m_myServiceIntent, m_myServiceConn, Context.BIND_ABOVE_CLIENT);
         }
-        /*
-         * MENU STUFF
-         *
-         */
-        setContentView(R.layout.activity_main);
 
-        /* setup button handling in menu */
-        Button      m_button;
-        m_button = (Button) findViewById(R.id.getLocations);
-        m_button.setOnClickListener(this);
-        m_button = (Button) findViewById(R.id.getHistory);
-        m_button.setOnClickListener(this);
-        m_button = (Button) findViewById(R.id.addcurloc_vibrate);
-        m_button.setOnClickListener(this);
-        m_button = (Button) findViewById(R.id.addcurloc_full);
-        m_button.setOnClickListener(this);
-        m_button = (Button) findViewById(R.id.stopService);
-        m_button.setOnClickListener(this);
-        m_button = (Button) findViewById(R.id.show_cur_map);
-        m_button.setOnClickListener(this);
-
-
-        /*
-        m_button = (Button) findViewById(R.id.asynctask);
-        m_button.setOnClickListener(this);
-
-        m_button = (Button) findViewById(R.id.startService);
-        m_button.setOnClickListener(this);
-
-        */
-        m_button = (Button) findViewById(R.id.tracks_clear);
-        m_button.setOnClickListener(this);
-
-        m_button = (Button) findViewById(R.id.getTimeSpentWhere);
-        m_button.setOnClickListener(this);
-
-        CheckBox rb;
-        rb = (CheckBox) findViewById(R.id.sleep_until_prox);
-        rb.setOnClickListener(this);
-        LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.SLEEP_UNTIL_PROX,m_sleepUtilProx.toString());
-        rb.setChecked(m_sleepUtilProx);
-
-        rb = (CheckBox) findViewById(R.id.track_idle);
-        rb.setOnClickListener(this);
-        LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_IDLE,m_trackIdle.toString());
-        rb.setChecked(m_trackIdle);
-
-        rb = (CheckBox) findViewById(R.id.track_proxy_trigger);
-        rb.setOnClickListener(this);
-        LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_PROXIMITY_TRIGGER,m_trackProxTrigger.toString());
-        rb.setChecked(m_trackProxTrigger);
-
-        rb = (CheckBox) findViewById(R.id.track_locations);
-        rb.setOnClickListener(this);
-        LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_LOCATIONS,m_trackLocations.toString());
-        rb.setChecked(m_trackLocations);
-
-
-
-
+        /* moved Menu to onBind after the app is bound */
     }
 
     @Override
@@ -209,7 +158,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
      */
     private void setupHistoryMenu()
     {
-        ArrayList<String> history = LocationReceiver.getLocationActivityHistory();
+        ArrayList<String> history = m_myService.getLocationReceiver().getLocationActivityHistory();
 
         if (history == null || history.size() == 0)
             return;
@@ -242,7 +191,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
      */
     private void setupTimeSpentWhere()
     {
-        Map<String, Long> myMap = LocationMatch.getTimeSpentWhereMap();
+        Map<String, Long> myMap = m_myService.getLocationMatch().getTimeSpentWhereMap();
         if (myMap == null || myMap.size() == 0)
             return;
 
@@ -251,7 +200,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         UICustomMapAdapter adapter = new UICustomMapAdapter(this, myMap);
         lv.setAdapter(adapter);
 
-//        ArrayList<String> timeSpentWhere = LocationMatch.getTimeSpentWhere();
+//        ArrayList<String> timeSpentWhere = m_myService.getLocationMatch().getTimeSpentWhere();
 //
 //        if (timeSpentWhere == null || timeSpentWhere.size() == 0)
 //            return;
@@ -293,18 +242,18 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         TextView tv    = (TextView) findViewById(R.id.locLatlng);
         tv.setOnClickListener(this);
 
-        LatLng latLngCur = LocationReceiver.getCurrentLoc();
+        LatLng latLngCur = m_myService.getLocationReceiver().getCurrentLoc();
         ArrayList<LatLng> locations;
 
         if (latLngCur != null)
         {
             String latLngTxt = String.format("%8.4f,%8.4f : current location press or long press to launch", latLngCur.lat, latLngCur.lng);
             tv.setText(latLngTxt);
-            locations = LocationMatch.getLocationWithDistance(latLngCur.lat, latLngCur.lng, latLngCur.lastAccuracy);
+            locations = m_myService.getLocationMatch().getLocationWithDistance(latLngCur.lat, latLngCur.lng, latLngCur.lastAccuracy);
         }
         else
         {
-           locations = LocationMatch.getLocaitons();
+           locations = m_myService.getLocationMatch().getLocaitons();
         }
 
         // build UI
@@ -330,11 +279,127 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 
     /**
      *
+     */
+    private class AsyncAddCurrentLocaiton extends AsyncTask<LatLng, Integer, LatLng> implements IntegerCallback
+    {
+        ProgressDialog progress = null;
+        int callbacks = 0;
+        /*
+          wait menu
+        */
+        @Override
+        protected void onPreExecute()
+        {
+            m_myService.getLocationReceiver().registerIntegerCallback(this);
+            progress = new ProgressDialog(myContext);
+            progress.setTitle("Location ");
+            progress.setMessage("Finding Current Location..");
+            progress.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... progress_list)
+        {
+            Integer progresssInt = progress_list[0];
+            callbacks++;
+
+            String space10 = new String(new char[callbacks]).replace('\0', '*');
+
+            if (progresssInt != null)
+            {
+                if (progresssInt > 0)
+                {
+                    progress.setTitle("GPS Searching..");
+                    progress.setMessage(space10);
+                }
+                else
+                if (progresssInt < 0)
+                {
+                    progress.setTitle("USING NETWORK ");
+                    progress.setMessage("Falling back to Network");
+                }
+            }
+        }
+        @Override
+        protected LatLng doInBackground(LatLng... params)
+        {
+            LatLng latLng = params[0];
+            if (latLng == null)
+            {
+                latLng = m_myService.getLocationReceiver().getCurrentLocWait();
+                latLng.name = "";
+                latLng.ringType = LatLng.RING_TYPE.FULL;
+                latLng.factive = true;
+                latLng.triggerDist = 100;
+            }
+            progress.dismiss();
+            return latLng;
+        }
+
+        @Override
+        protected void onPostExecute(LatLng latLng)
+        {
+            m_myService.getLocationReceiver().deRegisterIntegerCallback((IntegerCallback)this);
+            locationUpdateOrCreateMenu(latLng);
+            m_myService.getLocationReceiver().deRegisterIntegerCallback(this);
+        }
+
+        /* callback for progress */
+        @Override
+        public void integerCallback(Integer callbackInt)
+        {
+            onProgressUpdate(callbackInt);
+        }
+    }
+
+    /**
+     *
+     * @param latLng
+     */
+    private void locationUpdateOrCreateMenu(LatLng latLng)
+    {
+        Log.i(DEBUG_TAG, "onClick.addcurloc_silent/addcurloc_vib()");
+        setContentView(R.layout.addloc);
+
+        Button cancel = (Button) findViewById(R.id.addloc_cancel);
+        cancel.setOnClickListener(this);
+        Button btnok = (Button) findViewById(R.id.addloc_ok);
+        btnok.setOnClickListener(this);
+        CheckBox chkBoxVib = (CheckBox) findViewById(R.id.vibrate);
+        chkBoxVib.setOnClickListener(this);
+        CheckBox chkBoxRng = (CheckBox) findViewById(R.id.full_ring);
+        chkBoxRng.setOnClickListener(this);
+        Button m_button = (Button) findViewById(R.id.check_current_loc);
+        m_button.setOnClickListener(this);
+
+        EditText nameText = (EditText) findViewById(R.id.locName);
+        nameText.setText(latLng.name);
+
+        EditText distText = (EditText) findViewById(R.id.boundary);
+        distText.setText(String.valueOf(latLng.triggerDist)); // set to 100 meters by default
+
+        CheckBox chkActive = (CheckBox) findViewById(R.id.active);
+        chkActive.setChecked(latLng.factive);
+
+        EditText gpsText = (EditText) findViewById(R.id.gps);
+        if (latLng != null)
+            gpsText.setText(String.format("%8.4f,%8.4f", latLng.lat, latLng.lng));
+        else
+            gpsText.setText(String.format("%8.4f,%8.4f", -1.0, -1.0));
+
+        chkBoxVib.setChecked(latLng.ringType == LatLng.RING_TYPE.VIBRATE);
+        chkBoxRng.setChecked(latLng.ringType == LatLng.RING_TYPE.FULL);
+    }
+
+    /**
+     *
      * @param view
      */
     @Override
     public void onClick(View view)
     {
+        LatLng latLng = null;
+
         switch (view.getId())
         {
             /* menu for active click on notification */
@@ -365,10 +430,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                 setupLocationMenu();
                 break;
 
-            case R.id.row_name:
-                TextView tv1 = view.findViewById(R.id.row_name);
-                Log.i(DEBUG_TAG,"Hello:"+tv1.getText());
-                break;
+
 
 //            case R.id.row_type:
 //                Spinner spinner = (Spinner)view.findViewById(R.id.row_type);
@@ -378,52 +440,65 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
             case R.id.row_checkbox:
                 CheckBox cb = (CheckBox) view.findViewById(R.id.row_checkbox);
                 String name = (String)cb.getTag();
-                LocationMatch.activateLocation(name,cb.isChecked());
+                m_myService.getLocationReceiver().activateLocation(name,cb.isChecked());
                 Log.i(DEBUG_TAG,"Hello:"+cb.isChecked());
                 break;
 
-
+            case R.id.row_name:
+                TextView tv1 = view.findViewById(R.id.row_name);
+                name = (String)tv1.getText();
+                Log.i(DEBUG_TAG,"Hello:"+name);
+                latLng = m_myService.getLocationMatch().getLocationBuyKey(name);
+            /* let this fall through */
+            /* DO NOT ADD ENTRY HERE */
             /* menu add current locations */
-            case R.id.addcurloc_vibrate:
+//          case R.id.addcurloc_vibrate:
             case R.id.addcurloc_full:
                 {
-                    Log.i(DEBUG_TAG, "onClick.addcurloc_silent/addcurloc_vib()");
-                    setContentView(R.layout.addloc);
-
-                    Button cancel = (Button) findViewById(R.id.addloc_cancel);
-                    cancel.setOnClickListener(this);
-
-                    Button btnok = (Button) findViewById(R.id.addloc_ok);
-                    btnok.setOnClickListener(this);
-                    CheckBox chkBoxVib = (CheckBox) findViewById(R.id.vibrate);
-                    chkBoxVib.setOnClickListener(this);
-                    CheckBox chkBoxRng = (CheckBox) findViewById(R.id.full_ring);
-                    chkBoxRng.setOnClickListener(this);
-                    EditText distText = (EditText) findViewById(R.id.boundary);
-                    distText.setText("100"); // set to 100 meters by default
-                    CheckBox chkActive = (CheckBox) findViewById(R.id.active);
-                    chkActive.setChecked(true);
-                    Button m_button = (Button) findViewById(R.id.check_current_loc);
-                    m_button.setOnClickListener(this);
-                    EditText gpsText = (EditText) findViewById(R.id.gps);
-                    LatLng latLng = LocationReceiver.getCurrentLoc();
-
-                    if (latLng != null)
-                        gpsText.setText(String.format("%8.4f,%8.4f", latLng.lat, latLng.lng));
-                    else
-                        gpsText.setText(String.format("%8.4f,%8.4f", -1.0, -1.0));
-
-                    switch (view.getId())
-                    {
-                        case R.id.addcurloc_vibrate:
-                            chkBoxVib.setChecked(true);
-                            chkBoxRng.setChecked(false);
-                            break;
-                        case R.id.addcurloc_full:
-                            chkBoxVib.setChecked(false);
-                            chkBoxRng.setChecked(true);
-                            break;
-                    }
+                    m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_FORCE_LOCATION, null);
+                    new AsyncAddCurrentLocaiton().execute(latLng);
+//
+//                    if (latLng == null)
+//                    {
+//                        m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_FORCE_LOCATION, null);
+//                        latLng = m_myService.getLocationReceiver().getCurrentLocWait();
+//                        latLng.name = "";
+//                        latLng.ringType = (view.getId() == R.id.addcurloc_vibrate)?LatLng.RING_TYPE.VIBRATE:LatLng.RING_TYPE.FULL;
+//                        latLng.factive = true;
+//                        latLng.triggerDist = 100;
+//                    }
+//
+//                    Log.i(DEBUG_TAG, "onClick.addcurloc_silent/addcurloc_vib()");
+//                    setContentView(R.layout.addloc);
+//
+//                    Button cancel = (Button) findViewById(R.id.addloc_cancel);
+//                    cancel.setOnClickListener(this);
+//                    Button btnok = (Button) findViewById(R.id.addloc_ok);
+//                    btnok.setOnClickListener(this);
+//                    CheckBox chkBoxVib = (CheckBox) findViewById(R.id.vibrate);
+//                    chkBoxVib.setOnClickListener(this);
+//                    CheckBox chkBoxRng = (CheckBox) findViewById(R.id.full_ring);
+//                    chkBoxRng.setOnClickListener(this);
+//                    Button m_button = (Button) findViewById(R.id.check_current_loc);
+//                    m_button.setOnClickListener(this);
+//
+//                    EditText nameText = (EditText) findViewById(R.id.locName);
+//                    nameText.setText(latLng.name);
+//
+//                    EditText distText = (EditText) findViewById(R.id.boundary);
+//                    distText.setText(String.valueOf(latLng.triggerDist)); // set to 100 meters by default
+//
+//                    CheckBox chkActive = (CheckBox) findViewById(R.id.active);
+//                    chkActive.setChecked(latLng.factive);
+//
+//                    EditText gpsText = (EditText) findViewById(R.id.gps);
+//                    if (latLng != null)
+//                        gpsText.setText(String.format("%8.4f,%8.4f", latLng.lat, latLng.lng));
+//                    else
+//                        gpsText.setText(String.format("%8.4f,%8.4f", -1.0, -1.0));
+//
+//                    chkBoxVib.setChecked(latLng.ringType == LatLng.RING_TYPE.VIBRATE);
+//                    chkBoxRng.setChecked(latLng.ringType == LatLng.RING_TYPE.FULL);
                 }
                 break;
 
@@ -454,7 +529,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 
 //                    if (rb.isChecked())
 //                    {
-//                        LatLng latLng = LocationReceiver.getCurrentLoc();
+//                        LatLng latLng = m_myService.getLocationReceiver().getCurrentLoc();
 //                        gpsText.setText(String.format("%8.4f,%8.4f", latLng.lat, latLng.lng));
 //                    }
 //                    else
@@ -535,27 +610,26 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                         break;
                     }
 
-                    if (chkBoxVibr.isChecked())
+                    /* check if this is an update or new.. */
+                    latLng = m_myService.getLocationMatch().getLocationBuyKey(locName);
+                    if (latLng != null)
                     {
-                        if (!LocationMatch.addLocation(locName, triggerDis, factive, lat, lng, LatLng.RING_TYPE.VIBRATE))
-                        {
-                            Toast.makeText(myContext, "Current Location can not be established", Toast.LENGTH_LONG).show();
-                        }
+                        Log.i(DEBUG_TAG, "updating current LatLng Location)");
                     }
-                    else
-                    if (chkBoxFullr.isChecked())
+                    /*
+                     * if this is an update, it will over write the current one..
+                     */
+                    if (!m_myService.getLocationReceiver().addLocation(locName ,lat, lng, triggerDis, factive, chkBoxVibr.isChecked()?LatLng.RING_TYPE.VIBRATE:LatLng.RING_TYPE.FULL))
                     {
-                        if (!LocationMatch.addLocation(locName, triggerDis, factive, lat, lng, LatLng.RING_TYPE.FULL))
-                        {
-                            Toast.makeText(myContext, "Current Location can not be established", Toast.LENGTH_LONG).show();
-                        }
+                        Toast.makeText(myContext, "Current Location can not be established", Toast.LENGTH_LONG).show();
                     }
+
                     this.onBackPressed();
                     break;
                 }
 
             case R.id.show_cur_map:
-                LatLng latLng = LocationReceiver.getCurrentLoc();
+                latLng = m_myService.getLocationReceiver().getCurrentLoc();
                 if (latLng != null)
                 {
                     uri = String.format("geo:%f,%f", latLng.lat, latLng.lng);
@@ -579,7 +653,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                     boolean isChecked = radioButton.isChecked();
                     m_sleepUtilProx  = isChecked;
 
-                    LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.SLEEP_UNTIL_PROX,m_sleepUtilProx.toString());
+                    m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.SLEEP_UNTIL_PROX,m_sleepUtilProx.toString());
                 }
                 break;
 
@@ -590,7 +664,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                         boolean isChecked = radioButton.isChecked();
                         m_trackIdle  = isChecked;
 
-                        LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_IDLE,m_trackIdle.toString());
+                        m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_IDLE,m_trackIdle.toString());
                     }
                     break;
 
@@ -600,7 +674,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                         CheckBox checkbox    = (CheckBox) findViewById(R.id.track_locations);
                         boolean isChecked = checkbox.isChecked();
                         m_trackLocations = isChecked;
-                        LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_LOCATIONS,m_trackLocations.toString());
+                        m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_LOCATIONS,m_trackLocations.toString());
                     }
                     break;
 
@@ -610,7 +684,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                         CheckBox checkbox    = (CheckBox) findViewById(R.id.track_proxy_trigger);
                         boolean isChecked = checkbox.isChecked();
                         m_trackProxTrigger = isChecked;
-                        LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_PROXIMITY_TRIGGER,m_trackProxTrigger.toString());
+                        m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_PROXIMITY_TRIGGER,m_trackProxTrigger.toString());
                     }
                     break;
 
@@ -632,7 +706,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {
                                     Log.i(DEBUG_TAG, "TRACK_CLEAR -- deleted"+ dialog.toString());
-                                    LocationReceiver.Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_CLEAR,null);
+                                    m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_CLEAR,null);
                                 }
                             })
                             .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
@@ -676,7 +750,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 
             case R.id.row_name:
                 TextView tv1 = view.findViewById(R.id.row_name);
-                String name = LocationMatch.getLocationKey(tv1.getText().toString());
+                String name = m_myService.getLocationMatch().getLocationKey(tv1.getText().toString());
                 m_f_todelete = name;
 
 
@@ -694,7 +768,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                         .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 Log.i(DEBUG_TAG, "-->"+ dialog.toString());
-                                LatLng latLng = LocationMatch.deleteLocation(m_f_todelete);
+                                m_myService.getLocationReceiver().deleteLocation(m_f_todelete);
                                 setupLocationMenu();
                             }
                         })
@@ -722,7 +796,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         String name = (String)parent.getTag();
         Log.i(DEBUG_TAG, "onItemSelected ("+name+")");
 
-        LocationMatch.updateLocation(name, LatLng.RING_TYPE.valueOf(selected));
+        m_myService.getLocationReceiver().setRingLocation(name, LatLng.RING_TYPE.valueOf(selected));
     }
 
     @Override
@@ -753,15 +827,70 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                 MyLocalBinder binder = (MyLocalBinder) service;
                 m_myService = binder.getService();
                 m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_CONNECTED, null);
-
-                /* configure what we have.. */
-
                 m_isBound = true;
             }
             else
             {
                 Log.e(DEBUG_TAG, "onServiceConnected was connected isBound is true -- connected: " + className);
             }
+
+            /*
+             * MENU STUFF
+             *
+             */
+            setContentView(R.layout.activity_main);
+
+            /* setup button handling in menu */
+            Button      m_button;
+            m_button = (Button) findViewById(R.id.getLocations);
+            m_button.setOnClickListener(myOnclickListener);
+            m_button = (Button) findViewById(R.id.getHistory);
+            m_button.setOnClickListener(myOnclickListener);
+//          m_button = (Button) findViewById(R.id.addcurloc_vibrate);
+//          m_button.setOnClickListener(myOnclickListener);
+            m_button = (Button) findViewById(R.id.addcurloc_full);
+            m_button.setOnClickListener(myOnclickListener);
+            m_button = (Button) findViewById(R.id.stopService);
+            m_button.setOnClickListener(myOnclickListener);
+            m_button = (Button) findViewById(R.id.show_cur_map);
+            m_button.setOnClickListener(myOnclickListener);
+
+
+            /*
+            m_button = (Button) findViewById(R.id.asynctask);
+            m_button.setOnClickListener(myOnclickListener);
+
+            m_button = (Button) findViewById(R.id.startService);
+            m_button.setOnClickListener(myOnclickListener);
+
+            */
+            m_button = (Button) findViewById(R.id.tracks_clear);
+            m_button.setOnClickListener(myOnclickListener);
+
+            m_button = (Button) findViewById(R.id.getTimeSpentWhere);
+            m_button.setOnClickListener(myOnclickListener);
+
+
+            CheckBox rb;
+            rb = (CheckBox) findViewById(R.id.sleep_until_prox);
+            rb.setOnClickListener(myOnclickListener);
+            m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.SLEEP_UNTIL_PROX,m_sleepUtilProx.toString());
+            rb.setChecked(m_sleepUtilProx);
+
+            rb = (CheckBox) findViewById(R.id.track_idle);
+            rb.setOnClickListener(myOnclickListener);
+            m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_IDLE,m_trackIdle.toString());
+            rb.setChecked(m_trackIdle);
+
+            rb = (CheckBox) findViewById(R.id.track_proxy_trigger);
+            rb.setOnClickListener(myOnclickListener);
+            m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_PROXIMITY_TRIGGER,m_trackProxTrigger.toString());
+            rb.setChecked(m_trackProxTrigger);
+
+            rb = (CheckBox) findViewById(R.id.track_locations);
+            rb.setOnClickListener(myOnclickListener);
+            m_myService.getLocationReceiver().Configure(LocationReceiver.LocationReceiver_CONFIGURATION.TRACK_LOCATIONS,m_trackLocations.toString());
+            rb.setChecked(m_trackLocations);
         }
 
         @Override
@@ -776,4 +905,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
             m_isBound = false;
         }
     }
+
+
 }

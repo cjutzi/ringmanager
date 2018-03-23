@@ -38,9 +38,18 @@ public class MyService extends Service implements AsyncActivityInterface
         ACTIVITY_CONNECTED,
         ACTIVITY_ASYNCTASK,
         ACTIVITY_STOPSVC,
-
+        ACTIVITY_FORCE_LOCATION
     };
 
+    public LocationMatch getLocationMatch()
+    {
+        return m_locMatch;
+    }
+
+    public LocationReceiver getLocationReceiver()
+    {
+        return m_locRcv;
+    }
     /**
      * @author cjutzi
      */
@@ -123,9 +132,9 @@ public class MyService extends Service implements AsyncActivityInterface
         m_locMatch = new LocationMatch(this); // for this context.. create an object to save/restore
 
         /*
-           activate locations after you have created hte location object.
+           activate locations after you have created the location object.
          */
-        m_locRcv.activateLocations(m_locMatch);
+        m_locRcv.activateLocations(m_locMatch.getLocaitons());
         m_locRcv.callback(0);   /* init the core callback stuff */
     }
 
@@ -216,6 +225,10 @@ public class MyService extends Service implements AsyncActivityInterface
         switch (command) {
             case ACTIVITY_CONNECTED:
                 Log.i(DEBUG_TAG, "MyService.notificationReceiver(ACTIVITY_CONNECTED)");
+                break;
+            case ACTIVITY_FORCE_LOCATION:
+                Log.i(DEBUG_TAG, "MyService.notificationReceiver(ACTIVITY_FORCE_LOCATION)");
+                m_locRcv.forceLocaitonUpdate();
                 break;
 
             case ACTIVITY_ASYNCTASK:

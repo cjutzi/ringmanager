@@ -26,8 +26,9 @@ class LatLng implements java.io.Serializable
     RING_TYPE       ringType;
     Integer         lastDistMeter;
     float           lastAccuracy;
-    int             uniqueInt;
+    int             uniqueInt;              // managed in LocationReciever only (i.e. assigned )
     long            activeTimeSec;
+
 
     /**
      *
@@ -35,18 +36,20 @@ class LatLng implements java.io.Serializable
      * @param lat
      * @param lng
      * @param triggerDist
+     * @param factive
+     * @param ringType
      */
-    LatLng (String name, double lat, double lng, int triggerDist, int uniqueInt)
+    public void initLatLng(String name, double lat, double lng, int triggerDist, boolean factive, RING_TYPE ringType )
     {
-        this.name = name;
-        this.lat  = lat;
-        this.lng  = lng;
-        this.triggerDist = triggerDist;
-        this.factive = true;
-        this.lastDistMeter = -1;
-        ringType = FULL;
-        this.uniqueInt = uniqueInt;
-//        long activeTime = 0;
+        this.name           = name;
+        this.lat            = lat;
+        this.lng            = lng;
+        this.triggerDist    = triggerDist;
+        this.factive        = factive;
+        this.ringType       = ringType;
+        this.uniqueInt      = -1;
+        this.lastDistMeter  = -1;
+        this.activeTimeSec  = 0;
     }
     /**
      *
@@ -55,16 +58,9 @@ class LatLng implements java.io.Serializable
      * @param lng
      * @param triggerDist
      */
-    LatLng (String name, double lat, double lng, int triggerDist, boolean active, int uniqueInt)
+    LatLng (String name, double lat, double lng, int triggerDist)
     {
-        this.name = name;
-        this.lat  = lat;
-        this.lng  = lng;
-        this.triggerDist = triggerDist;
-        this.factive = active;
-        this.lastDistMeter = -1;
-        this.uniqueInt = uniqueInt;
-        long activeTime = 0;
+        initLatLng(name, lat, lng, triggerDist, true,  FULL);
     }
 
     /**
@@ -74,42 +70,23 @@ class LatLng implements java.io.Serializable
      * @param lng
      * @param triggerDist
      * @param active
-     * @param uniqueInt
-     * @param accuracy
      */
-    LatLng (String name, double lat, double lng, int triggerDist, boolean active, int uniqueInt, float accuracy)
+    LatLng (String name, double lat, double lng, int triggerDist, boolean active)
     {
-        this.name = name;
-        this.lat  = lat;
-        this.lng  = lng;
-        this.triggerDist = triggerDist;
-        this.factive = active;
-        this.lastDistMeter = -1;
-        this.uniqueInt = uniqueInt;
-        this.lastAccuracy = accuracy;
-//        long activeTime = 0;
+        initLatLng(name, lat, lng, triggerDist, active, FULL);
     }
-
     /**
      *
      * @param name
      * @param lat
      * @param lng
      * @param triggerDist
-     * @param ringType
      */
-    LatLng (String name, double lat, double lng, int triggerDist, boolean active, RING_TYPE ringType, int uniqueInt)
+    LatLng (String name, double lat, double lng, int triggerDist, boolean active, RING_TYPE ringType)
     {
-        this.name = name;
-        this.lat = lat;
-        this.lng = lng;
-        this.triggerDist = triggerDist;
-        this.factive = active;
-        this.ringType = ringType;
-        this.lastDistMeter = -1;
-        this.uniqueInt = uniqueInt;
-//        long activeTime = 0;
+        initLatLng(name, lat, lng, triggerDist, active, ringType);
     }
+
 
 
 

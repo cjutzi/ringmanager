@@ -28,11 +28,11 @@ public class UICustomAdapter extends ArrayAdapter<UIModel>
     {
         super(context,R.layout.row,resource);
         // TODO Auto-generated constructor stub
-        this.context = context;
-        this.modelItems = resource;
-        this.cListener = clistener;
+        this.context     = context;
+        this.modelItems  = resource;
+        this.cListener   = clistener;
         this.lcListener  = lcListener;
-        this.isListener = isListener;
+        this.isListener  = isListener;
     }
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
@@ -60,8 +60,6 @@ public class UICustomAdapter extends ArrayAdapter<UIModel>
 
         Spinner spinner = (Spinner) convertView.findViewById(R.id.row_type);
         String[] spinnerList = { LatLng.RING_TYPE.FULL.toString(), LatLng.RING_TYPE.VIBRATE.toString() };
-//        ArrayAdapter<String> spinnerAdaptor = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, spinnerList);
-//        spinnerAdaptor.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         ArrayAdapter<String> spinnerAdaptor = new ArrayAdapter<String>(context, R.layout.myservice_spinner_item, spinnerList);
         spinnerAdaptor.setDropDownViewResource(R.layout.myservice_spinner_dropdown_item);
         spinner.setAdapter(spinnerAdaptor);

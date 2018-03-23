@@ -13,21 +13,22 @@ import java.util.Map;
 
 public class LocationMatch
 {
-    static String   DEBUG_TAG        = "LocationMatch";
-    static int      m_lastUniqueUsed = 100;
+    String DEBUG_TAG=this.getClass().getSimpleName();
 
-    static HashMap<String, Object> m_locationList = new HashMap<String, Object>();
-    static Context m_context = null;
+    static private  HashMap<String, Object> m_locationList = new HashMap<String, Object>();
 
     static
     {
-        m_locationList.put("Living Savior", new LatLng("Living Savior", 45.3749701, -122.7668027, 200, true, LatLng.RING_TYPE.VIBRATE, 1));
-        m_locationList.put("Intel JF", new LatLng("Intel JF", 45.543054, -122.960508, 100, true, LatLng.RING_TYPE.FULL,2));
-        m_locationList.put("Home", new LatLng("Home", 45.410034, -122.710750, 100, true, LatLng.RING_TYPE.FULL, 3));
-        m_locationList.put("Zupan's Market", new LatLng("Zupan's Market", 45.407277, -122.7250246, 50, true, LatLng.RING_TYPE.FULL,4 ));
-        m_locationList.put("SJC JetCenter", new LatLng("SJC JetCenter", 37.3591078, -121.932838, 50, true, LatLng.RING_TYPE.VIBRATE, 5));
-        m_locationList.put("KHIO", new LatLng("KHIO", 45.5398, -122.9473, 200, true, LatLng.RING_TYPE.FULL, 6));
+        m_locationList.put("Living Savior", new LatLng("Living Savior", 45.3749701, -122.7668027, 200, true, LatLng.RING_TYPE.VIBRATE));
+        m_locationList.put("Intel JF", new LatLng("Intel JF", 45.543054, -122.960508, 100, true, LatLng.RING_TYPE.FULL));
+        m_locationList.put("Home", new LatLng("Home", 45.410034, -122.710750, 100, true, LatLng.RING_TYPE.FULL));
+        m_locationList.put("Zupan's Market", new LatLng("Zupan's Market", 45.407277, -122.7250246, 50, true, LatLng.RING_TYPE.FULL));
+        m_locationList.put("SJC JetCenter", new LatLng("SJC JetCenter", 37.3591078, -121.932838, 50, true, LatLng.RING_TYPE.VIBRATE));
+        m_locationList.put("KHIO", new LatLng("KHIO", 45.5398, -122.9473, 200, true, LatLng.RING_TYPE.FULL));
     }
+
+    Context m_context = null;
+
 
     /**
      * @param context
@@ -100,14 +101,12 @@ public class LocationMatch
     }
 
     /**
-     *
+     * calculates the distance sets accuracy for each element in the list..
      * @param lat
      * @param lng
      */
     private static void calcListDistance (double lat, double lng, float accuracy)
     {
-        Log.i(DEBUG_TAG, "calcListDistance()");
-
         for (String key : m_locationList.keySet())
         {
             LatLng latLng = (LatLng) m_locationList.get(key);
@@ -118,8 +117,6 @@ public class LocationMatch
             latLng.lastDistMeter = (int) dist;
             latLng.lastAccuracy = accuracy;
             m_locationList.put(latLng.name, latLng); // ??
-
-            Log.i(DEBUG_TAG, String.format("calcListDistance() : Distance from (" + key + ") is (" + dist + ")m - Active Time ("+Util.formatTimeDelta(0,latLng.activeTimeSec) +") lastAccuracy = "+latLng.lastAccuracy));
         }
     }
 
@@ -128,20 +125,20 @@ public class LocationMatch
      * @param name
      * @param activeTimeMsec
      */
-    public static void addActiveTime (String name, long activeTimeMsec)
+    public void addActiveTime (String name, long activeTimeMsec)
     {
         LatLng latLng = getLocationBuyKey(name);
         if (latLng != null)
         {
             latLng.activeTimeSec += (activeTimeMsec/1000);
-            saveStuff();
+            saveLocaitons();
         }
     }
 
     /**
      * @return
      */
-    public static ArrayList<LatLng> getLocationWithDistance(double lat, double lng, float accuracy)
+    public ArrayList<LatLng> getLocationWithDistance(double lat, double lng, float accuracy)
     {
         calcListDistance(lat, lng, accuracy );
         ArrayList retVal = new ArrayList<LatLng>();
@@ -154,11 +151,13 @@ public class LocationMatch
     }
 
     /**
+     * get the "factive=true" list that are closeest..
+     *
      * @param lat current locaiton
      * @param lng current location
      * @return
      */
-    public static ArrayList<LatLng> getActive(double lat, double lng, float accuracy)
+    public ArrayList<LatLng> getActive(double lat, double lng, float accuracy)
     {
         calcListDistance(lat, lng, accuracy);
         ArrayList<LatLng> m_activeKeyList = new ArrayList<LatLng>();
@@ -166,6 +165,9 @@ public class LocationMatch
         for (String key : m_locationList.keySet())
         {
             LatLng latLng = (LatLng)m_locationList.get(key);
+
+            if (!latLng.factive)
+                continue;
 
             if (latLng.lastDistMeter < latLng.triggerDist + accuracy)
             {
@@ -181,7 +183,7 @@ public class LocationMatch
      * @param accuracy
      * @return
      */
-    public static LatLng getClosestActive(double lat, double lng, float accuracy)
+    public LatLng getClosestActive(double lat, double lng, float accuracy)
     {
         ArrayList<LatLng> activeKeyList = getActive(lat,lng, accuracy);
         if (activeKeyList.size() == 0)
@@ -204,7 +206,7 @@ public class LocationMatch
      * @param lng current location
      * @return
      */
-    public static LatLng getClosest(double lat, double lng, float accuracy)
+    public LatLng getClosest(double lat, double lng, float accuracy)
     {
         calcListDistance(lat, lng, accuracy);
         LatLng closestLatLng = null;
@@ -232,78 +234,80 @@ public class LocationMatch
      * @param ringType
      * @return
      */
-    public static boolean addLocation(String name,
-                                      int triggerDist,
-                                      boolean factive,
-                                      float lat, float lng,
-                                      LatLng.RING_TYPE ringType)
-    {
-        if (lat == 0.0 && lng == 0.0)
-            return false;
-        LatLng   latLng = new LatLng(name, (double)lat, (double)lng, triggerDist, true, ringType, 0);
-
-        addLocation(name, triggerDist, factive, latLng, latLng.ringType);
-        return true;
-    }
+//    public static boolean addLocation(String name,
+//                                      int triggerDist,
+//                                      boolean factive,
+//                                      float lat, float lng,
+//                                      LatLng.RING_TYPE ringType)
+//    {
+//        if (lat == 0.0 && lng == 0.0)
+//            return false;
+//        LatLng   latLng = new LatLng(name, (double)lat, (double)lng, triggerDist, true, ringType, 0);
+//
+//        addLocation(name, triggerDist, factive, latLng, latLng.ringType);
+//        /* cjutzi - where does proximity trigger live? */
+//        return true;
+//    }
     /**
      *
-     * @param name
-     * @param triggerDist
-     * @param factive
-     * @param latLng - will be over written with values in parameters
-     * @param ringType
      * @return
      */
-    public static LatLng addLocation(String name,
-                                     int triggerDist,
-                                     boolean factive,
-                                     LatLng latLng,
-                                     LatLng.RING_TYPE ringType)
+    public LatLng addLocation(LatLng latLng)
     {
-        latLng.triggerDist = triggerDist;
-        latLng.name = name;
-        latLng.ringType = ringType;
-        m_locationList.put(name, latLng);
-        latLng.uniqueInt = m_lastUniqueUsed++;
-        saveStuff();
+        if (latLng == null)
+            return null;
+
+        if ((latLng.name == null || latLng.name.length() ==0) ||
+            (latLng.lastDistMeter == 0) ||
+            (latLng.ringType == null))
+            throw new RuntimeException("Invalid LatLng object");
+
+        /* if this is an update first delete it then add it bcak :-)*/
+        if (deleteLocation(latLng.name) != null)
+            Log.i(DEBUG_TAG,"addLocation: WARNING.. ("+latLng.name+") was not removed before adding, Caution regarding Proximity registration");
+
+        m_locationList.put(latLng.name, latLng);
+        saveLocaitons();
         return latLng;
     }
 
 
+//    /**
+//     *
+//     * @param location
+//     * @param ringType
+//     * @return
+//     */
+//    public LatLng updateLocation(String location, LatLng.RING_TYPE ringType)
+//    {
+//        for (String key : m_locationList.keySet())
+//        {
+//            LatLng latLng = (LatLng) m_locationList.get(key);
+//
+//            if (location.equals( latLng.name ))
+//            {
+//                if (latLng.ringType == ringType)
+//                {
+//                    return latLng;
+//                }
+//                else
+//                {
+//                    LocationReceiver.activateLocation(latLng.name ,true);
+//                    latLng.ringType = ringType;
+//                    saveLocaitons();
+//                }
+//                return latLng;
+//            }
+//        }
+//        return null;
+//    }
     /**
+     * removes from list and saves list after removal
      *
      * @param location
-     * @param ringType
      * @return
      */
-    public static LatLng updateLocation(String location, LatLng.RING_TYPE ringType)
-    {
-        for (String key : m_locationList.keySet())
-        {
-            LatLng latLng = (LatLng) m_locationList.get(key);
-
-            if (location.equals( latLng.name ))
-            {
-                if (latLng.ringType == ringType)
-                {
-                    return latLng;
-                }
-                else
-                {
-                    latLng.ringType = ringType;
-                    saveStuff();
-                }
-                return latLng;
-            }
-        }
-        return null;
-    }
-    /**
-     *
-     * @param location
-     * @return
-     */
-    public static LatLng deleteLocation(String location)
+    public LatLng deleteLocation(String location)
     {
         for (String key : m_locationList.keySet())
         {
@@ -312,41 +316,60 @@ public class LocationMatch
             if (location.equals( latLng.name ))
             {
                 m_locationList.remove(key);
-                saveStuff();
+                saveLocaitons();
                 return latLng;
             }
         }
         return null;
     }
 
+//    /**
+//     *
+//     * @param name
+//     * @param updatedLatLng
+//     * @return
+//     */
+//    public static boolean updateLatLng(String name, LatLng updatedLatLng)
+//    {
+//        saveLocaitons();
+//        return true;
+//    }
+
     /**
      *
-     * @param location
-     * @param active
-     * @return
      */
-    public static LatLng activateLocation(String location, boolean active)
+    public  void saveLocaitons()
     {
-        for (String key : m_locationList.keySet())
-        {
-            LatLng latLng = (LatLng) m_locationList.get(key);
-
-            if (location.equals( latLng.name ))
-            {
-                latLng.factive = active;
-                saveStuff();
-                return latLng;
-            }
-        }
-        return null;
+        saveStuff();
     }
+//    /**
+//     *
+//     * @param location
+//     * @param activeKeyList
+//     * @return
+//     */
+//    public LatLng activateLocation(String location, boolean active)
+//    {
+//        for (String key : m_locationList.keySet())
+//        {
+//            LatLng latLng = (LatLng) m_locationList.get(key);
+//
+//            if (location.equals( latLng.name ))
+//            {
+//                latLng.factive = active;
+//                saveLocaitons();
+//                return latLng;
+//            }
+//        }
+//        return null;
+//    }
 
     /**
      *
      * @param location
      * @return
      */
-    public static String getLocationKey(String location)
+    public String getLocationKey(String location)
     {
         for (String key : m_locationList.keySet())
         {
@@ -365,7 +388,7 @@ public class LocationMatch
      * @param location
      * @return
      */
-    public static LatLng getLocationBuyKey(String location)
+    public LatLng getLocationBuyKey(String location)
     {
         for (String key : m_locationList.keySet())
         {
@@ -384,9 +407,7 @@ public class LocationMatch
      *
      * @return
      */
-    static
     public  ArrayList<String> getTimeSpentWhere()
-
     {
         ArrayList<String>  retArray = new ArrayList<String>();
 
@@ -402,9 +423,7 @@ public class LocationMatch
      *
      * @return
      */
-    static
     public  Map<String, Long> getTimeSpentWhereMap()
-
     {
         HashMap<String, Long> retMap = new HashMap<String, Long>();
 
@@ -419,45 +438,34 @@ public class LocationMatch
     /**
      *
      */
-    private static void saveStuff()
+    private void saveStuff()
     {
         Log.i(DEBUG_TAG, "saveStuff");
-
         SaveRestore.saveStuff(m_context.getExternalFilesDir("/").toString(), m_locationList, "locationMatch");
-        HashMap<String, Object>retVal = SaveRestore.restoreStuff(m_context.getExternalFilesDir("/").toString(), "locationMatch");
-        m_locationList.putAll(retVal);
-
-        if (retVal != null)
-        {
-            for (String key : retVal.keySet())
-            {
-                LatLng latLng = (LatLng) retVal.get(key);
-
-                if (m_lastUniqueUsed < latLng.uniqueInt)
-                    m_lastUniqueUsed = latLng.uniqueInt;
-            }
-            m_lastUniqueUsed++;
-        }
+        restoreStuff();
     }
 
     /**
-     *
+     * restores all and resets lastUniqueUsed to be used in LatLng creates
      */
-    private static void restoreStuff()
+    private void restoreStuff()
     {
         HashMap<String, Object>retVal = SaveRestore.restoreStuff(m_context.getExternalFilesDir("/").toString(), "locationMatch");
 
         if (retVal != null)
             m_locationList.putAll(retVal);
+
         Log.i(DEBUG_TAG, "restoreStuff");
-        for (String key : m_locationList.keySet())
-        {
-            LatLng latLng = (LatLng) m_locationList.get(key);
-//          latLng.activeTimeSec = 0;
-            Log.i(DEBUG_TAG, "activeName "+latLng.name+" activeTimeSec "+latLng.activeTimeSec);
-        }
-//        saveStuff();
     }
+
+
+
+
+
+
+
+
+
 }
 
 
