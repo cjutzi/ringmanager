@@ -238,7 +238,7 @@ public class MyService extends Service implements AsyncActivityInterface
                 break;
             case ACTIVITY_FORCE_LOCATION:
                 Log.i(DEBUG_TAG, "MyService.notificationReceiver(ACTIVITY_FORCE_LOCATION)");
-                m_locRcv.forceLocaitonUpdate();
+                m_locRcv.forceLocationUpdate();
                 break;
 
             case ACTIVITY_ASYNCTASK:

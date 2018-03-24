@@ -29,8 +29,6 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
 {
     String                       DEBUG_TAG                  = this.getClass().getSimpleName();
 
-    static int  m_concurrentLockForLocaiton = 0;
-
     public enum LocationReceiver_CONFIGURATION
     {
         SLEEP_UNTIL_PROX,
@@ -39,7 +37,6 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
         TRACK_LOCATIONS,
         TRACK_CLEAR,
     };
-
 
     static final float           SPEED_LIMIT_FPS            = 5.0f*(0.44704f);  // 5mph - if your over this, you're not standing still and I'm ignoring any tiggers to be in GeoFence
     static final int             ACCURACY_LIMIT_METERS      = 30;
@@ -210,7 +207,7 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
         cancelAlarmIntent();
         m_alarmActive = true;
 //        alarmManager.setRepeating (AlarmManager.RTC_WAKEUP, initialSec*1000, intervalSec*1000,  alarmPendingIntent);
-        alarmManager.setRepeating (AlarmManager.RTC_WAKEUP, initialSec*100, intervalSec*100,  alarmPendingIntent);
+        alarmManager.setRepeating (AlarmManager.RTC_WAKEUP, initialSec*1000, intervalSec*1000,  alarmPendingIntent);
     }
     /**
      * since Locations will activate and re-register for Proximity.. we need to do this after the
@@ -229,28 +226,6 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
         }
         m_myService.getLocationMatch().saveLocaitons();
     }
-
-    /**
-     *
-     * @return
-     */
-//    public LatLng  getCurrentLocWait()
-//    {
-//        while (m_concurrentLockForLocaiton !=0)
-//        {
-//            try
-//            {
-//                Log.i(m_locationReceiver.DEBUG_TAG,"getCurrentLocWait: waiting... Value = "+m_concurrentLockForLocaiton);
-//                Thread.sleep(1000);
-//            }
-//            catch (Exception e)
-//            {
-//                Log.d(m_locationReceiver.DEBUG_TAG,"getCurrentLocWait: Exception:"+e.getMessage());
-//            }
-//
-//        }
-//        return new LatLng("", m_currentLocationLat, m_currentLocationLng, -1, false);
-//    }
 
     /**
      *
@@ -385,8 +360,6 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
         m_currentLocationBearning = location.getBearing();
         m_currentLocationLng      = location.getLongitude();
         m_currentLocationLat      = location.getLatitude();
-
-        m_concurrentLockForLocaiton = 0;
 
         /*
            if the provider is Network.. flush it you've already given up..
@@ -624,16 +597,7 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
         m_locationReceiver.manageProximityPendingIntent(latLng);
         return true;
     }
-//    /**
-//     *
-//     * @param name
-//     * @param triggerDistance
-//     * @param mode
-//     */
-//    public void addLocation(String name, int triggerDistance, boolean factive, LatLng.RING_TYPE mode)
-//    {
-//        addLocation(name, m_currentLocationLat, m_currentLocationLng, triggerDistance, factive, mode);
-//    }
+
 
     /**
      *
@@ -652,19 +616,11 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
         if (latLng.name.equals(m_activeName))
         {
             m_activeName=null;
-            m_locationReceiver.forceLocaitonUpdate();
+            m_locationReceiver.forceLocationUpdate();
         }
         return latLng;
     }
 
-//    /**
-//     *
-//     * @param latLng
-//     */
-//    public static void activateLocation(LatLng latLng)
-//    {
-//        m_locationReceiver.manageProximityPendingIntent(latLng);
-//    }
     /**
      *
      * @return
@@ -883,9 +839,8 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
     /**
      *
      */
-    public void forceLocaitonUpdate()
+    public void forceLocationUpdate()
     {
-        m_concurrentLockForLocaiton = 1;
         setAlarmIntent(0,ALARM_INRANGE_PROX_MIN*60);
     }
     /**

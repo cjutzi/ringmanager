@@ -200,31 +200,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         UICustomMapAdapter adapter = new UICustomMapAdapter(this, myMap);
         lv.setAdapter(adapter);
 
-//        ArrayList<String> timeSpentWhere = m_myService.getLocationMatch().getTimeSpentWhere();
-//
-//        if (timeSpentWhere == null || timeSpentWhere.size() == 0)
-//            return;
-//
-//        setContentView(R.layout.simple_listview);
-//        ListView lv=(ListView)findViewById(R.id.simplelistview);
-//        lv.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1 , timeSpentWhere)
-//        {
-//            @Override
-//            public View getView(int position, View convertView, ViewGroup parent){
-//                // Get the current item from ListView
-//                View view = super.getView(position,convertView,parent);
-//                view.setPadding(0,0,0,0);
-////                    // Get the Layout Parameters for ListView Current Item View
-////                    ViewGroup.LayoutParams params = view.getLayoutParams();
-////
-////                    // Set the height of the Item View
-////                    params.height = 50;
-////                    view.setLayoutParams(params);
-//
-//                return view;
-//            }
-//        });
-
     }
     /**
      * this sets up the list current locaitons menu
@@ -280,7 +255,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
     /**
      *
      */
-    private class AsyncAddCurrentLocaiton extends AsyncTask<LatLng, Integer, LatLng> implements LockGPS
+    private class AsyncAddCurrentLocation extends AsyncTask<LatLng, Integer, LatLng> implements LockGPS
     {
         ProgressDialog progress = null;
         int done = 1;
@@ -429,14 +404,14 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 
             /* target current lat/lng */
             case R.id.locLatlng:
-                TextView tv = (TextView)view.findViewById(R.id.locLatlng);
-                String text = (String)tv.getText();
-                String[] textblock = text.split(",");
-                float latitude = new Float(textblock[0]);
-                textblock = textblock[1].split(":");
-                float longitude = new Float(textblock[0]);
-                String uri = String.format( "geo:%f,%f", latitude, longitude);
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                TextView tv         = (TextView)view.findViewById(R.id.locLatlng);
+                String text         = (String)tv.getText();
+                String[] textblock  = text.split(",");
+                float latitude      = new Float(textblock[0]);
+                textblock           = textblock[1].split(":");
+                float longitude     = new Float(textblock[0]);
+                String uri          = String.format( "geo:%f,%f", latitude, longitude);
+                Intent intent       = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
                 myContext.startActivity(intent);
                 break;
 
@@ -452,8 +427,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
             case R.id.getLocations:
                 setupLocationMenu();
                 break;
-
-
 
 //            case R.id.row_type:
 //                Spinner spinner = (Spinner)view.findViewById(R.id.row_type);
@@ -479,49 +452,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
             case R.id.addcurloc_full:
                 {
                     //m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_FORCE_LOCATION, null);
-                    new AsyncAddCurrentLocaiton().execute(latLng);
-//
-//                    if (latLng == null)
-//                    {
-//                        m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_FORCE_LOCATION, null);
-//                        latLng = m_myService.getLocationReceiver().getCurrentLocWait();
-//                        latLng.name = "";
-//                        latLng.ringType = (view.getId() == R.id.addcurloc_vibrate)?LatLng.RING_TYPE.VIBRATE:LatLng.RING_TYPE.FULL;
-//                        latLng.factive = true;
-//                        latLng.triggerDist = 100;
-//                    }
-//
-//                    Log.i(DEBUG_TAG, "onClick.addcurloc_silent/addcurloc_vib()");
-//                    setContentView(R.layout.addloc);
-//
-//                    Button cancel = (Button) findViewById(R.id.addloc_cancel);
-//                    cancel.setOnClickListener(this);
-//                    Button btnok = (Button) findViewById(R.id.addloc_ok);
-//                    btnok.setOnClickListener(this);
-//                    CheckBox chkBoxVib = (CheckBox) findViewById(R.id.vibrate);
-//                    chkBoxVib.setOnClickListener(this);
-//                    CheckBox chkBoxRng = (CheckBox) findViewById(R.id.full_ring);
-//                    chkBoxRng.setOnClickListener(this);
-//                    Button m_button = (Button) findViewById(R.id.check_current_loc);
-//                    m_button.setOnClickListener(this);
-//
-//                    EditText nameText = (EditText) findViewById(R.id.locName);
-//                    nameText.setText(latLng.name);
-//
-//                    EditText distText = (EditText) findViewById(R.id.boundary);
-//                    distText.setText(String.valueOf(latLng.triggerDist)); // set to 100 meters by default
-//
-//                    CheckBox chkActive = (CheckBox) findViewById(R.id.active);
-//                    chkActive.setChecked(latLng.factive);
-//
-//                    EditText gpsText = (EditText) findViewById(R.id.gps);
-//                    if (latLng != null)
-//                        gpsText.setText(String.format("%8.4f,%8.4f", latLng.lat, latLng.lng));
-//                    else
-//                        gpsText.setText(String.format("%8.4f,%8.4f", -1.0, -1.0));
-//
-//                    chkBoxVib.setChecked(latLng.ringType == LatLng.RING_TYPE.VIBRATE);
-//                    chkBoxRng.setChecked(latLng.ringType == LatLng.RING_TYPE.FULL);
+                    new AsyncAddCurrentLocation().execute(latLng);
                 }
                 break;
 
@@ -549,16 +480,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                     uri = String.format( "geo:%f,%f", lat, lng);
                     intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
                     myContext.startActivity(intent);
-
-//                    if (rb.isChecked())
-//                    {
-//                        LatLng latLng = m_myService.getLocationReceiver().getCurrentLoc();
-//                        gpsText.setText(String.format("%8.4f,%8.4f", latLng.lat, latLng.lng));
-//                    }
-//                    else
-//                    {
-//                        gpsText.setText("");
-//                    }
                 }
                 break;
             case R.id.vibrate:
@@ -665,6 +586,8 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
             case R.id.stopService:
                 Log.i(DEBUG_TAG, "onClick.stopService()");
                 m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_STOPSVC, null);
+                this.onBackPressed();
+                onPause();
                 break;
 
 
