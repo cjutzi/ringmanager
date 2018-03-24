@@ -23,7 +23,9 @@ import java.util.TreeMap;
  * Created by cjutzi on 11/21/17.
  */
 
-public class LocationReceiver implements  LocationListener, GpsStatus.Listener
+// TODO - make LocationMeceiver extend LocationMatch.  It should 'just work' and move all calls to myService.getLocationMatch(). to myService.getLocationReceiver - maybe I'm overloading the receiver here.. and need to break this up.. Just a thought
+
+public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
 {
     String                       DEBUG_TAG                  = this.getClass().getSimpleName();
 
@@ -90,6 +92,10 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 
     static LocationReceiver      m_locationReceiver      = null;  // TODO - fix this but look at ProximityReceiver since it calls this statically.. need to figure this out.
 
+
+
+    /* locks */
+    Integer         foobar = 0;
 
     public void Configure(LocationReceiver_CONFIGURATION config, String parameter)
     {
@@ -203,7 +209,8 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         }
         cancelAlarmIntent();
         m_alarmActive = true;
-        alarmManager.setRepeating (AlarmManager.RTC_WAKEUP, initialSec*1000, intervalSec*1000,  alarmPendingIntent);
+//        alarmManager.setRepeating (AlarmManager.RTC_WAKEUP, initialSec*1000, intervalSec*1000,  alarmPendingIntent);
+        alarmManager.setRepeating (AlarmManager.RTC_WAKEUP, initialSec*100, intervalSec*100,  alarmPendingIntent);
     }
     /**
      * since Locations will activate and re-register for Proximity.. we need to do this after the
@@ -227,23 +234,23 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
      *
      * @return
      */
-    public LatLng  getCurrentLocWait()
-    {
-        while (m_concurrentLockForLocaiton !=0)
-        {
-            try
-            {
-                Log.d(m_locationReceiver.DEBUG_TAG,"getCurrentLocWait: waiting... Value = "+m_concurrentLockForLocaiton);
-                Thread.sleep(1000);
-            }
-            catch (Exception e)
-            {
-                Log.d(m_locationReceiver.DEBUG_TAG,"getCurrentLocWait: Exception:"+e.getMessage());
-            }
-
-        }
-        return new LatLng("", m_currentLocationLat, m_currentLocationLng, -1, false);
-    }
+//    public LatLng  getCurrentLocWait()
+//    {
+//        while (m_concurrentLockForLocaiton !=0)
+//        {
+//            try
+//            {
+//                Log.i(m_locationReceiver.DEBUG_TAG,"getCurrentLocWait: waiting... Value = "+m_concurrentLockForLocaiton);
+//                Thread.sleep(1000);
+//            }
+//            catch (Exception e)
+//            {
+//                Log.d(m_locationReceiver.DEBUG_TAG,"getCurrentLocWait: Exception:"+e.getMessage());
+//            }
+//
+//        }
+//        return new LatLng("", m_currentLocationLat, m_currentLocationLng, -1, false);
+//    }
 
     /**
      *
@@ -305,6 +312,11 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
             case GpsStatus.GPS_EVENT_FIRST_FIX:
                 Log.i(DEBUG_TAG, "GPS status change: GPS_EVENT_FIRST_FIX " + event);
                 m_locationManager.removeGpsStatusListener(this);
+                synchronized (foobar)
+                {
+                    if (m_GPSLock != null)
+                        m_GPSLock.GPSLocked(0);
+                }
                 break;
 
             case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
@@ -314,22 +326,23 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                     failing GPS Fix..
                  */
                 long msecFixWait = System.currentTimeMillis() - m_msecSinceStartFix;
-                synchronized (this)
+                synchronized (foobar)
                 {
-                    if (m_integerCallback != null)
-                        m_integerCallback.integerCallback((int) m_abortedGPSFixes);
+                    if (m_GPSLock != null)
+                        m_GPSLock.GPSLocked(1);
                 }
                 if (msecFixWait > MAX_FIX_WAIT_SECONDS*1000)
                 {
                     Log.i(DEBUG_TAG, "GPS status change: ****** ABORTING GPS FIX.. MOVING TO NETWORK PROVIDER -- waited "+msecFixWait+" msec");
-                    synchronized (this)
-                    {
-                        if (m_integerCallback != null)
-                            m_integerCallback.integerCallback(-1);
-                    }
                     m_abortedGPSFixes++;
                     m_locationManager.removeGpsStatusListener(this);
                     reqeustGPSLocation(LocationManager.NETWORK_PROVIDER);
+
+                    synchronized (foobar)
+                    {
+                        if (m_GPSLock != null)
+                            m_GPSLock.GPSLocked(0);
+                    }
                 }
                 break;
             case GpsStatus.GPS_EVENT_STARTED:
@@ -338,6 +351,11 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
                 break;
             case GpsStatus.GPS_EVENT_STOPPED:
                 Log.i(DEBUG_TAG, "GPS status change: GPS_EVENT_STOPPED " + event);
+                synchronized (foobar)
+                {
+                    if (m_GPSLock != null)
+                        m_GPSLock.GPSLocked(0);
+                }
                 break;
             default:
                 Log.i(DEBUG_TAG, "GPS status change: " + event);
@@ -622,8 +640,9 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
      * Deletes from the Location list and unsubscribes proxy detect.
      * @param name
      */
-    public void deleteLocation(String name)
+    public LatLng deleteLocation(String name)
     {
+
         LatLng latLng = m_myService.getLocationMatch().deleteLocation(name);
         latLng.factive = false;
         m_locationReceiver.manageProximityPendingIntent(latLng);
@@ -635,6 +654,7 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
             m_activeName=null;
             m_locationReceiver.forceLocaitonUpdate();
         }
+        return latLng;
     }
 
 //    /**
@@ -1016,7 +1036,6 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
         Log.i(DEBUG_TAG,"callback(): from Alarm - setup Location track....");
         m_callbackAlarmCnt++;
 
-
         String  provider,
                 providerBackup;
 
@@ -1079,20 +1098,20 @@ public class LocationReceiver implements  LocationListener, GpsStatus.Listener
 
     /* CALLBACK REG FOR GPS UPDATES */
 
-    IntegerCallback m_integerCallback = null;
-    public void registerIntegerCallback(IntegerCallback ib)
+    LockGPS m_GPSLock = null;
+    public void registerGPSCallback(LockGPS ib)
     {
-        synchronized (this)
+        synchronized (foobar)
         {
 
-            m_integerCallback = ib;
+            m_GPSLock = ib;
         }
     }
-    public void deRegisterIntegerCallback(IntegerCallback ib)
+    public void deRegisterGPSCallback(LockGPS ib)
     {
-        synchronized (this)
+        synchronized (foobar)
         {
-            m_integerCallback = null;
+            m_GPSLock = null;
         }
     }
 

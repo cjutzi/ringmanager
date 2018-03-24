@@ -280,9 +280,10 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
     /**
      *
      */
-    private class AsyncAddCurrentLocaiton extends AsyncTask<LatLng, Integer, LatLng> implements IntegerCallback
+    private class AsyncAddCurrentLocaiton extends AsyncTask<LatLng, Integer, LatLng> implements LockGPS
     {
         ProgressDialog progress = null;
+        int done = 1;
         int callbacks = 0;
         /*
           wait menu
@@ -290,7 +291,8 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         @Override
         protected void onPreExecute()
         {
-            m_myService.getLocationReceiver().registerIntegerCallback(this);
+            m_myService.getLocationReceiver().registerGPSCallback(this);
+            m_myService.getLocationReceiver().callback(1);
             progress = new ProgressDialog(myContext);
             progress.setTitle("Location ");
             progress.setMessage("Finding Current Location..");
@@ -324,31 +326,52 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         protected LatLng doInBackground(LatLng... params)
         {
             LatLng latLng = params[0];
-            if (latLng == null)
+            while (done !=  0)
             {
-                latLng = m_myService.getLocationReceiver().getCurrentLocWait();
-                latLng.name = "";
-                latLng.ringType = LatLng.RING_TYPE.FULL;
-                latLng.factive = true;
-                latLng.triggerDist = 100;
-            }
-            progress.dismiss();
-            return latLng;
+                try
+                {
+                    Thread.sleep(1000);
+                }
+                catch (Exception e)
+                {
+
+                }
+             }
+            return (latLng);
         }
 
         @Override
         protected void onPostExecute(LatLng latLng)
         {
-            m_myService.getLocationReceiver().deRegisterIntegerCallback((IntegerCallback)this);
+            progress.dismiss();
+            m_myService.getLocationReceiver().deRegisterGPSCallback(this);
+            if (latLng == null)
+            {
+                latLng = m_myService.getLocationReceiver().getCurrentLoc();
+                latLng.factive = true;
+                latLng.lastDistMeter = 0;
+                latLng.triggerDist = 100;
+                latLng.ringType = LatLng.RING_TYPE.FULL;
+            }
             locationUpdateOrCreateMenu(latLng);
-            m_myService.getLocationReceiver().deRegisterIntegerCallback(this);
         }
 
         /* callback for progress */
         @Override
-        public void integerCallback(Integer callbackInt)
+        public void GPSLocked(Integer zeroIsDoneGpsIsPosNetworkIsNeg)
         {
-            onProgressUpdate(callbackInt);
+            if (zeroIsDoneGpsIsPosNetworkIsNeg == 0)
+            {
+                done = 0;
+            }
+            else if (zeroIsDoneGpsIsPosNetworkIsNeg > 0)
+            {
+                onProgressUpdate(1);
+            }
+            else if (zeroIsDoneGpsIsPosNetworkIsNeg < 0)
+            {
+                onProgressUpdate(-1);
+            }
         }
     }
 
@@ -455,7 +478,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 //          case R.id.addcurloc_vibrate:
             case R.id.addcurloc_full:
                 {
-                    m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_FORCE_LOCATION, null);
+                    //m_myService.notificationReceiver(MyService_NOTIFY_ACTION_COMMAND.ACTIVITY_FORCE_LOCATION, null);
                     new AsyncAddCurrentLocaiton().execute(latLng);
 //
 //                    if (latLng == null)

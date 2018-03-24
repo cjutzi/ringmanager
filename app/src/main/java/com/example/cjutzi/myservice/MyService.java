@@ -41,15 +41,24 @@ public class MyService extends Service implements AsyncActivityInterface
         ACTIVITY_FORCE_LOCATION
     };
 
+    /**
+     *
+     * @return
+     */
     public LocationMatch getLocationMatch()
     {
         return m_locMatch;
     }
 
+    /**
+     *
+     * @return
+     */
     public LocationReceiver getLocationReceiver()
     {
         return m_locRcv;
     }
+
     /**
      * @author cjutzi
      */
@@ -106,7 +115,8 @@ public class MyService extends Service implements AsyncActivityInterface
         Log.i(DEBUG_TAG, "onDestroy()");
         saveStuff();
         m_locRcv.cleanup();
-        m_alarmManager.cancel(m_alarmPendingIntent);
+        if (m_alarmManager != null)
+            m_alarmManager.cancel(m_alarmPendingIntent);
     }
 
     @Override

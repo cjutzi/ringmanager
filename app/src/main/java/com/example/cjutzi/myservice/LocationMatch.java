@@ -11,6 +11,20 @@ import java.util.Map;
  * Created by cjutzi on 11/22/17.
  */
 
+/*
+ * Extendable methods
+ *
+ *    public void               addActiveTime (String name, long activeTimeMsec)
+ *    public ArrayList<LatLng>  getLocationWithDistance(double lat, double lng, float accuracy)
+ *    public ArrayList<LatLng>  getActive(double lat, double lng, float accuracy)
+ *    public LatLng             getClosestActive(double lat, double lng, float accuracy)
+ *    public LatLng             getClosest(double lat, double lng, float accuracy)
+ *    public LatLng             getLocationBuyKey(String location)
+ *    public LatLng             addLocation(LatLng latLng)
+ *    public LatLng             deleteLocation(String location)
+ *    public  ArrayList<String> getTimeSpentWhere()
+ */
+
 public class LocationMatch
 {
     String DEBUG_TAG=this.getClass().getSimpleName();
@@ -31,6 +45,13 @@ public class LocationMatch
 
 
     /**
+     *
+     */
+    LocationMatch()
+    {
+       throw new RuntimeException("must have context passed to construct");
+    }
+    /**
      * @param context
      */
     LocationMatch(Context context)
@@ -38,54 +59,6 @@ public class LocationMatch
         m_context = context;
         restoreStuff();
     }
-
-    /**
-     * @param lat1
-     * @param lon1
-     * @param lat2
-     * @param lon2
-     * @param unit 'K' kilo, 'N' Nautical miles, 'M' statute Miles, 'm' meters
-     * @return
-     */
-    public static double distance(double lat1, double lon1, double lat2, double lon2, char unit)
-    {
-        double theta = lon1 - lon2;
-        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
-        dist = Math.acos(dist);
-        dist = rad2deg(dist);
-        dist = dist * 60 * 1.1515;
-
-        if (unit == 'K')
-        {
-            dist = dist * 1.609344;
-        }
-        else
-         if (unit == 'm')
-        {
-            dist = dist * 1.609344 * 1000.0;
-        }
-        else
-        if (unit == 'N')
-        {
-            dist = dist * 0.8684;
-        }
-        return (dist);
-    }
-
-    /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-    /*::  This function converts decimal degrees to radians             :*/
-    /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-    private static double deg2rad(double deg) {
-        return (deg * Math.PI / 180.0);
-    }
-
-    /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-    /*::  This function converts radians to decimal degrees             :*/
-    /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-    private static double rad2deg(double rad) {
-        return (rad * 180.0 / Math.PI);
-    }
-
 
     /**
      * @return
@@ -112,7 +85,7 @@ public class LocationMatch
             LatLng latLng = (LatLng) m_locationList.get(key);
             //Log.i(DEBUG_TAG,latLng.name+" lat:"+latLng.lat+" lng:"+latLng.lng+" loc lat:"+lat+" lng:"+lng);
 
-            double dist = distance(lat, lng, latLng.lat, latLng.lng, 'm');
+            double dist = Util.distance(lat, lng, latLng.lat, latLng.lng, 'm');
 
             latLng.lastDistMeter = (int) dist;
             latLng.lastAccuracy = accuracy;
@@ -431,7 +404,6 @@ public class LocationMatch
         {
             LatLng latLng = (LatLng) m_locationList.get(key);
             retMap.put(latLng.name, latLng.activeTimeSec);
-           //retMap.put(latLng.name, Util.formatTimeDelta(0,latLng.activeTimeSec*1000));
         }
         return retMap;
     }
@@ -457,15 +429,6 @@ public class LocationMatch
 
         Log.i(DEBUG_TAG, "restoreStuff");
     }
-
-
-
-
-
-
-
-
-
 }
 
 
