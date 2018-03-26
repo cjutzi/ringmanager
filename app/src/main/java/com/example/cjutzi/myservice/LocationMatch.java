@@ -200,27 +200,7 @@ public class LocationMatch
     }
 
 
-    /**
-     * @param name
-     * @param triggerDist
-     * @param factive
-     * @param ringType
-     * @return
-     */
-//    public static boolean addLocation(String name,
-//                                      int triggerDist,
-//                                      boolean factive,
-//                                      float lat, float lng,
-//                                      LatLng.RING_TYPE ringType)
-//    {
-//        if (lat == 0.0 && lng == 0.0)
-//            return false;
-//        LatLng   latLng = new LatLng(name, (double)lat, (double)lng, triggerDist, true, ringType, 0);
-//
-//        addLocation(name, triggerDist, factive, latLng, latLng.ringType);
-//        /* cjutzi - where does proximity trigger live? */
-//        return true;
-//    }
+
     /**
      *
      * @return
@@ -245,35 +225,7 @@ public class LocationMatch
     }
 
 
-//    /**
-//     *
-//     * @param location
-//     * @param ringType
-//     * @return
-//     */
-//    public LatLng updateLocation(String location, LatLng.RING_TYPE ringType)
-//    {
-//        for (String key : m_locationList.keySet())
-//        {
-//            LatLng latLng = (LatLng) m_locationList.get(key);
-//
-//            if (location.equals( latLng.name ))
-//            {
-//                if (latLng.ringType == ringType)
-//                {
-//                    return latLng;
-//                }
-//                else
-//                {
-//                    LocationReceiver.activateLocation(latLng.name ,true);
-//                    latLng.ringType = ringType;
-//                    saveLocaitons();
-//                }
-//                return latLng;
-//            }
-//        }
-//        return null;
-//    }
+
     /**
      * removes from list and saves list after removal
      *
@@ -296,17 +248,7 @@ public class LocationMatch
         return null;
     }
 
-//    /**
-//     *
-//     * @param name
-//     * @param updatedLatLng
-//     * @return
-//     */
-//    public static boolean updateLatLng(String name, LatLng updatedLatLng)
-//    {
-//        saveLocaitons();
-//        return true;
-//    }
+
 
     /**
      *
@@ -315,27 +257,6 @@ public class LocationMatch
     {
         saveStuff();
     }
-//    /**
-//     *
-//     * @param location
-//     * @param activeKeyList
-//     * @return
-//     */
-//    public LatLng activateLocation(String location, boolean active)
-//    {
-//        for (String key : m_locationList.keySet())
-//        {
-//            LatLng latLng = (LatLng) m_locationList.get(key);
-//
-//            if (location.equals( latLng.name ))
-//            {
-//                latLng.factive = active;
-//                saveLocaitons();
-//                return latLng;
-//            }
-//        }
-//        return null;
-//    }
 
     /**
      *

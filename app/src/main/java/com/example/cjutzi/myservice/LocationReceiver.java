@@ -229,6 +229,19 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
 
     /**
      *
+     * @param message
+     */
+    private void dealWithGPSSpinner( LockGPS.MESSAGES message )
+    {
+        synchronized (foobar)
+        {
+            if (m_GPSLock != null)
+                m_GPSLock.GPSLocked(message);
+        }
+
+    }
+    /**
+     *
      * @return
      */
     public LatLng  getCurrentLoc()
@@ -287,38 +300,29 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
             case GpsStatus.GPS_EVENT_FIRST_FIX:
                 Log.i(DEBUG_TAG, "GPS status change: GPS_EVENT_FIRST_FIX " + event);
                 m_locationManager.removeGpsStatusListener(this);
-                synchronized (foobar)
-                {
-                    if (m_GPSLock != null)
-                        m_GPSLock.GPSLocked(0);
-                }
+                dealWithGPSSpinner(LockGPS.MESSAGES.GPSFIXED);
                 break;
 
             case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+
                 Log.i(DEBUG_TAG, "GPS status change: GPS_EVENT_SATELLITE_STATUS " + event);
 
                 /*
                     failing GPS Fix..
                  */
                 long msecFixWait = System.currentTimeMillis() - m_msecSinceStartFix;
-                synchronized (foobar)
-                {
-                    if (m_GPSLock != null)
-                        m_GPSLock.GPSLocked(1);
-                }
+
                 if (msecFixWait > MAX_FIX_WAIT_SECONDS*1000)
                 {
                     Log.i(DEBUG_TAG, "GPS status change: ****** ABORTING GPS FIX.. MOVING TO NETWORK PROVIDER -- waited "+msecFixWait+" msec");
                     m_abortedGPSFixes++;
                     m_locationManager.removeGpsStatusListener(this);
+                    dealWithGPSSpinner(LockGPS.MESSAGES.NETWORK);
                     reqeustGPSLocation(LocationManager.NETWORK_PROVIDER);
-
-                    synchronized (foobar)
-                    {
-                        if (m_GPSLock != null)
-                            m_GPSLock.GPSLocked(0);
-                    }
                 }
+                else
+                    dealWithGPSSpinner(LockGPS.MESSAGES.GPSLOCKING);
+
                 break;
             case GpsStatus.GPS_EVENT_STARTED:
                 m_msecSinceStartFix = System.currentTimeMillis();
@@ -326,11 +330,6 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
                 break;
             case GpsStatus.GPS_EVENT_STOPPED:
                 Log.i(DEBUG_TAG, "GPS status change: GPS_EVENT_STOPPED " + event);
-                synchronized (foobar)
-                {
-                    if (m_GPSLock != null)
-                        m_GPSLock.GPSLocked(0);
-                }
                 break;
             default:
                 Log.i(DEBUG_TAG, "GPS status change: " + event);
@@ -376,8 +375,14 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
                 (m_accuracyTry > MAX_ACCURACY_FAILURE_TRYS))
             {
                 m_locationManager.removeUpdates(this);
-                Log.i(DEBUG_TAG, "onLocationChange : provider = " + location.getProvider() + "  Accuracy = " + location.getAccuracy() + " try # " + m_accuracyTry);
+                Log.i(DEBUG_TAG, "onLocationChange : provider = " + location.getProvider() + "  Accuracy = " + location.getAccuracy() + " try # " + m_accuracyTry + " -- CLOSING");
                 m_accuracyTry = 0;
+                dealWithGPSSpinner(LockGPS.MESSAGES.DONE);
+            }
+            else
+            {
+                dealWithGPSSpinner(LockGPS.MESSAGES.GPSACCURACY);
+                return;
             }
         }
 
@@ -800,7 +805,8 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
                         Long totalLastSavedTimeMinutes   = totalLastSavedTimeMsec/60/1000;
                         Long totalActiveSavedTimeMinutes = (System.currentTimeMillis() - m_activeTimeStart)/60/1000;
 
-                        /* if  I'm on the first tick of the timer for a new location and you find your self in Libo.. (no mans land)..
+                        /*
+                         * if  I'm on the first tick of the timer for a new location and you find your self in Libo.. (no mans land)..
                          * don't count it.. just transition.  You might have been driving down the road.
                          */
                         if ( totalLastSavedTimeMinutes == totalActiveSavedTimeMinutes &&
@@ -1020,7 +1026,6 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
     public ArrayList<String> getLocationActivityHistory()
 
     {
-
         ArrayList<String> reverseList = new ArrayList(m_arrayLocationActivityHistory.values());
         Collections.reverse(reverseList);
         return reverseList;
@@ -1058,7 +1063,6 @@ public class LocationReceiver  implements  LocationListener, GpsStatus.Listener
     {
         synchronized (foobar)
         {
-
             m_GPSLock = ib;
         }
     }

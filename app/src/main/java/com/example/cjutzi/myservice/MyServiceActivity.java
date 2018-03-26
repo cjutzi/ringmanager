@@ -62,12 +62,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
     private Boolean m_trackProxTrigger   = false;
     private Boolean m_trackLocations     = true;
 
-
-//
-//    Boolean              m_checkBox1;
-//    Boolean              m_checkBox2;
-//    Boolean              m_checkBox3;
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -82,7 +76,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 
         m_myServiceIntent = new Intent(myContext, MyService.class);
 
-         if (!m_isBound);
+        if (!m_isBound);
         {
             m_myServiceConn = new SvcConnection();
             startService(m_myServiceIntent);
@@ -99,7 +93,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         Log.i(DEBUG_TAG, "MyServiceActivity : onResme)");
     }
 
-
     /**
      *
      */
@@ -110,7 +103,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         m_trackIdle        = (hashMap==null || hashMap.get("m_trackIdle")       ==null)?true: new Boolean((String)hashMap.get("m_trackIdle"));
         m_trackProxTrigger = (hashMap==null || hashMap.get("m_trackProxTrigger")==null)?false:new Boolean((String)hashMap.get("m_trackProxTrigger"));
         m_trackLocations   = (hashMap==null || hashMap.get("m_trackLocations")  ==null)?true :new Boolean((String)hashMap.get("m_trackLocations"));
-
     }
 
     /**
@@ -182,7 +174,6 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
                     return view;
                 }
             });
-
     }
 
 
@@ -255,7 +246,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
     /**
      *
      */
-    private class AsyncAddCurrentLocation extends AsyncTask<LatLng, Integer, LatLng> implements LockGPS
+    private class AsyncAddCurrentLocation extends AsyncTask<LatLng, LockGPS.MESSAGES, LatLng> implements LockGPS
     {
         ProgressDialog progress = null;
         int done = 1;
@@ -266,6 +257,7 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         @Override
         protected void onPreExecute()
         {
+            done = 0;
             m_myService.getLocationReceiver().registerGPSCallback(this);
             m_myService.getLocationReceiver().callback(1);
             progress = new ProgressDialog(myContext);
@@ -275,43 +267,58 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
         }
 
         @Override
-        protected void onProgressUpdate(Integer... progress_list)
+        protected void onProgressUpdate(LockGPS.MESSAGES... progress_list)
         {
-            Integer progresssInt = progress_list[0];
+            LockGPS.MESSAGES message = progress_list[0];
             callbacks++;
 
             String space10 = new String(new char[callbacks]).replace('\0', '*');
 
-            if (progresssInt != null)
+            switch (message)
             {
-                if (progresssInt > 0)
-                {
+                case DONE:
+                    done = 0;
+                    break;
+                case GPSFIXED:
+                    progress.setTitle("GPS FirstFix..");
+                    progress.setMessage(space10);
+                    break;
+                case GPSACCURACY:
+                    progress.setTitle("GPS Wait Accuracy..");
+                    progress.setMessage(space10);
+                    break;
+                case GPSLOCKING:
                     progress.setTitle("GPS Searching..");
                     progress.setMessage(space10);
-                }
-                else
-                if (progresssInt < 0)
-                {
+                    break;
+                case NETWORK:
                     progress.setTitle("USING NETWORK ");
                     progress.setMessage("Falling back to Network");
-                }
+                    break;
+                default:
+                    progress.setTitle("UNKNOWN ");
+                    progress.setMessage("Uknown");
+                    break;
             }
         }
         @Override
         protected LatLng doInBackground(LatLng... params)
         {
             LatLng latLng = params[0];
-            while (done !=  0)
+            if (latLng == null)
             {
-                try
+                while (done != 0)
                 {
-                    Thread.sleep(1000);
-                }
-                catch (Exception e)
-                {
+                    try
+                    {
+                        Thread.sleep(1000);
+                    }
+                    catch (Exception e)
+                    {
 
+                    }
                 }
-             }
+            }
             return (latLng);
         }
 
@@ -333,20 +340,15 @@ public class MyServiceActivity  extends AppCompatActivity implements View.OnClic
 
         /* callback for progress */
         @Override
-        public void GPSLocked(Integer zeroIsDoneGpsIsPosNetworkIsNeg)
+        public void GPSLocked(LockGPS.MESSAGES message)
         {
-            if (zeroIsDoneGpsIsPosNetworkIsNeg == 0)
+            switch (message)
             {
-                done = 0;
+                case DONE:                 done = 0;   break;
+                default:
+                    onProgressUpdate(message);
             }
-            else if (zeroIsDoneGpsIsPosNetworkIsNeg > 0)
-            {
-                onProgressUpdate(1);
-            }
-            else if (zeroIsDoneGpsIsPosNetworkIsNeg < 0)
-            {
-                onProgressUpdate(-1);
-            }
+
         }
     }
 
